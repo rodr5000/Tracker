@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Task Calendar";
+}
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+
+<div class="container mt-4">
+    <h2 class="mb-4">לוח שנה - תאריכי סיום משימות</h2>
+
+    <div id="calendar"></div>
+</div>
+
+<script>
+    //מחכה שהעמוד יטען
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+
+        //מחלק את העמוד לחודשים
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+
+            
+            events: '/Task/GetCalendarEvents', // נקבל נתונים מהשרת
+            
+            //כשלוחצים על היום זה מעביר לדף נתונים לאותו יום
+            eventClick: function (info) {
+                window.location.href = '/Task/Details/' + info.event.id;
+            }
+        });
+
+        calendar.render();
+    });
+</script>

@@ -1,8 +1,11 @@
-﻿namespace Tracker.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Tracker.Models
 {
-    public enum TaskStatus
+    public enum Status
     {
         Pending,
+        [Display(Name ="In Progress")]
         InProgress,
         Completed,
         Cancelled
