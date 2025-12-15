@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-
+using Tracker.Models;
 namespace Tracker.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
-        public DbSet<Tracker.Models.TaskItem> TaskItems { get; set; }
-        public DbSet<Tracker.Models.TimeLog> TimeLogs { get; set; }
+        public DbSet<MainTask> mainTasks { get; set; }
+        public DbSet<TaskItem> TaskItems { get; set; }
+        public DbSet<TimeLog> TimeLogs { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {

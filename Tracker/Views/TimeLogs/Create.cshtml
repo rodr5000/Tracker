@@ -1,0 +1,62 @@
+﻿@model Tracker.Models.TimeLog
+
+@{
+    ViewData["Title"] = "Create Time Log";
+}
+
+<h2>Create Time Log</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-5">
+        <form asp-action="Create">
+
+            <!-- Show all model validation errors -->
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <!-- Task selection -->
+            <div class="form-group mb-3">
+                <label asp-for="TaskItemId" class="form-label"></label>
+                <select asp-for="TaskItemId" class="form-control"
+                        asp-items="ViewBag.TaskItemId">
+                </select>
+                <span asp-validation-for="TaskItemId" class="text-danger"></span>
+            </div>
+
+            <!-- Start Time --> 
+            <div class="form-group mb-3">
+                <label asp-for="StartTime" class="form-label"></label>
+                <input asp-for="StartTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="StartTime" class="text-danger"></span>
+            </div>
+
+            <!-- End Time -->
+            <div class="form-group mb-3">
+                <label asp-for="EndTime" class="form-label"></label>
+                <input asp-for="EndTime" type="datetime-local" class="form-control" />
+                <span asp-validation-for="EndTime" class="text-danger"></span>
+            </div>
+
+            <!-- Note -->
+            <div class="form-group mb-3">
+                <label asp-for="Note" class="form-label"></label>
+                <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Note" class="text-danger"></span>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary">Create</button>
+
+        </form>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="IndexTL">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

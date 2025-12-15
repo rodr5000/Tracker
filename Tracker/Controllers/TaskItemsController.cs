@@ -23,29 +23,26 @@ namespace Tracker.Controllers
         public async Task<IActionResult> Index()
         {
             return View(await _context.TaskItems.ToListAsync());
+            
         }
 
         // GET: TaskItems/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
 
-            var taskItem = await _context.TaskItems
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var taskItem = await _context.TaskItems.FirstOrDefaultAsync(m => m.Id == id);
             if (taskItem == null)
             {
                 return NotFound();
             }
-
+            
             return View(taskItem);
         }
 
         // GET: TaskItems/Create
         public IActionResult Create()
         {
+            ViewBag.MainTaskId = new SelectList(_context.mainTasks, "Id", "Name");
             return View();
         }
 
@@ -54,7 +51,7 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Description,Status,Priority,CreatedAt,DueDate")] TaskItem taskItem)
+        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")] TaskItem taskItem)
         {
             if (ModelState.IsValid)
             {
@@ -62,6 +59,9 @@ namespace Tracker.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            
+
             return View(taskItem);
         }
 
@@ -161,12 +161,12 @@ namespace Tracker.Controllers
         public IActionResult GetCalendarEvents()
         {
             var events = _context.TaskItems
-                .Where(t => t.DueDate.HasValue)
+                .Where(t => t.StartTime.HasValue)
                 .Select(t => new
                 {
                     id = t.Id,
                     title = t.Title,
-                    start = t.DueDate.Value.ToString("yyyy-MM-dd"),
+                    start = t.EndTime.Value.ToString("yyyy-MM-dd"),
                     allDay = true,
                     status = t.Status.ToString() // המרת ה-enum למחרוזת
                 })
@@ -174,7 +174,27 @@ namespace Tracker.Controllers
 
             return Json(events);
         }
+        public IActionResult Timer()
+        {
+            ViewBag.MainTaskId = new SelectList(_context.mainTasks, "Id", "Name");
+            return View();
+        }
 
+        /*[HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Timer([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")] TaskItem taskItem)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Add(taskItem);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+
+
+            return View(taskItem);
+        }*/
 
 
     }

@@ -1,10 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Tracker.Models 
 {
     public class TaskItem
     {
+
         public int Id { get; set; }
+
+        public int? MainTaskId { get; set; }
 
         [Required]
         [StringLength(100)]
@@ -19,8 +23,10 @@ namespace Tracker.Models
         [Required]
         public Priority Priority { get; set; } = Priority.Medium;
 
-        public DateTime? CreatedAt { get; set; } = DateTime.Now;
-        public DateTime? DueDate { get; set; }
+        public DateTime? StartTime { get; set; } = DateTime.Now;
+        public DateTime? EndTime { get; set; }
+
+        
 
         // Navigation
         public ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();

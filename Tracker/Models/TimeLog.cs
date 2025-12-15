@@ -3,6 +3,7 @@
 namespace Tracker.Models
 
 {
+    //this model represnts a recosrd of time spent working on a task
     public class TimeLog
     {
         public int Id { get; set; }
@@ -18,7 +19,8 @@ namespace Tracker.Models
         [StringLength(300)]
         public string Note { get; set; } = string.Empty;
 
+
         // Navigation
-       public TaskItem TaskItem { get; set; }
+        public TaskItem? TaskItem { get; set; }
     }
 }
