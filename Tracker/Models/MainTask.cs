@@ -10,5 +10,9 @@
         public TaskCyclicality TaskCyclicality { get; set; } = TaskCyclicality.notrepeat;
         public DateTime? CreatedAt { get; set; } = DateTime.Now;
         public DateTime? DueDate { get; set; }
+
+
+        // Navigation
+        public ICollection<TaskItem> TaskItems { get; set; } = new List<TaskItem>();
     }
 }

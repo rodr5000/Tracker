@@ -12,8 +12,8 @@ using Tracker.Data;
 namespace Tracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251215112658_migi1")]
-    partial class migi1
+    [Migration("20251225071422_acszx")]
+    partial class acszx
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -292,6 +292,8 @@ namespace Tracker.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("MainTaskId");
+
                     b.ToTable("TaskItems");
                 });
 
@@ -375,10 +377,19 @@ namespace Tracker.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Tracker.Models.TaskItem", b =>
+                {
+                    b.HasOne("Tracker.Models.MainTask", "MainTask")
+                        .WithMany("TaskItems")
+                        .HasForeignKey("MainTaskId");
+
+                    b.Navigation("MainTask");
+                });
+
             modelBuilder.Entity("Tracker.Models.TimeLog", b =>
                 {
                     b.HasOne("Tracker.Models.TaskItem", "TaskItem")
-                        .WithMany("TimeLogs")
+                        .WithMany()
                         .HasForeignKey("TaskItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -386,9 +397,9 @@ namespace Tracker.Migrations
                     b.Navigation("TaskItem");
                 });
 
-            modelBuilder.Entity("Tracker.Models.TaskItem", b =>
+            modelBuilder.Entity("Tracker.Models.MainTask", b =>
                 {
-                    b.Navigation("TimeLogs");
+                    b.Navigation("TaskItems");
                 });
 #pragma warning restore 612, 618
         }

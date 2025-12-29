@@ -9,6 +9,9 @@ namespace Tracker.Models
         public int Id { get; set; }
 
         public int? MainTaskId { get; set; }
+        public MainTask? MainTask { get; set; } 
+
+
 
         [Required]
         [StringLength(100)]
@@ -29,6 +32,6 @@ namespace Tracker.Models
         
 
         // Navigation
-        public ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
+        //public ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
     }
 }

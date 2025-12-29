@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Composition;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Models;
 namespace Tracker.Data
@@ -8,6 +9,7 @@ namespace Tracker.Data
         public DbSet<MainTask> mainTasks { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<TimeLog> TimeLogs { get; set; }
+        
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {

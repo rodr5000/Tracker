@@ -1,7 +1,5 @@
 ﻿@model IEnumerable<Tracker.Models.TaskItem>
 
-
-
 @{
     ViewData["Title"] = "Tasks";
 }
@@ -9,18 +7,9 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0">My Tasks</h2>
-        <a class="btn btn-primary" asp-action="Create">
-            + Add Task
-        </a>
+        <a class="btn btn-primary" asp-action="Create">+ Add Task</a>
     </div>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="mb-0">My Tasks</h2>
-            <a class="btn btn-primary" asp-action="Timer">
-                Start Timer
-            </a>
-        </div>
     <div class="list-group">
         @foreach (var task in Model)
         {
@@ -33,45 +22,64 @@
                 _ => ""
             };
 
+            <div class="list-group-item list-group-item-action mb-2 rounded shadow-sm @statusClass"
+                 style="border-left-width: 10px;">
 
-            <a asp-action="Details" asp-route-id="@task.Id"
-               class="text-decoration-none text-dark">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <!-- ✅ Clickable title only -->
+                        <h5 class="mb-1">
+                            <a asp-action="Details"
+                               asp-route-id="@task.Id"
+                               class="text-decoration-none text-dark">
+                                @task.Title
+                            </a>
+                        </h5>
 
-                <div class="list-group-item list-group-item-action mb-2 rounded shadow-sm @statusClass"
-                     style="border-left-width: 10px;">
-
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="mb-1">@task.Title</h5>
-                            <div class="small text-muted">
-                                Priority: <strong>@task.Priority</strong> |
-                                Status: <strong>@task.Status</strong>
-                            </div>
-
-                            @if (!string.IsNullOrEmpty(task.Description))
-                            {
-                                <p class="mt-2 text-secondary">@task.Description</p>
-                            }
+                        <div class="small text-muted">
+                            Priority: <strong>@task.Priority</strong>
                         </div>
 
-                        <div class="text-end">
-                            <span class="badge bg-light text-muted">Click for details →</span>
-                        </div>
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            <p class="mt-2 text-secondary">@task.Description</p>
+                        }
                     </div>
 
-                    @if (task.EndTime.HasValue)
-                    {
-                        <div class="small mt-2 text-end text-muted">
-                            Due: @task.EndTime.Value.ToString("dd MMM yyyy")
-                        </div>
-                    }
+                    <!-- ✅ INLINE STATUS CHANGE -->
+                    <div class="text-end">
+                        <form asp-action="UpdateStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@task.Id" />
 
+                            <select name="status"
+                                    class="form-select form-select-sm"
+                                    onchange="this.form.submit()">
+                                @foreach (Status s in Enum.GetValues(typeof(Status)))
+                                {
+                                    <option value="@s" selected="@(s == task.Status)">
+                                        @s
+                                    </option>
+                                }
+                            </select>
+                        </form>
+                    </div>
                 </div>
 
-            </a>
+                @if (task.EndTime.HasValue)
+                {
+                    <div class="small mt-2 text-end text-muted">
+                        Due: @task.EndTime.Value.ToString("dd MMM yyyy")
+                    </div>
+                }
+            </div>
         }
-
+    </div>
 </div>
+<a class="btn btn-outline-secondary" asp-action="Report" asp-route-filter="overdue">
+    📊 Report
+</a>
+
 
         
 

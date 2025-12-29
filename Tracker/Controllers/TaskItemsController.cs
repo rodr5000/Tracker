@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
+using Tracker.Models.ViewModels;
 
 namespace Tracker.Controllers
 {
@@ -30,7 +31,7 @@ namespace Tracker.Controllers
         public async Task<IActionResult> Details(int? id)
         {
 
-            var taskItem = await _context.TaskItems.FirstOrDefaultAsync(m => m.Id == id);
+            var taskItem = await _context.TaskItems.Include(t => t.MainTask).FirstOrDefaultAsync(m => m.Id == id);
             if (taskItem == null)
             {
                 return NotFound();
@@ -60,10 +61,17 @@ namespace Tracker.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            
+            // 🔴 YOU MUST RELOAD THE DROPDOWN
+            ViewBag.MainTaskId = new SelectList(
+                _context.mainTasks,
+                "Id",
+                "Name",
+                taskItem.MainTaskId
+            );
 
             return View(taskItem);
         }
+
 
         // GET: TaskItems/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -78,6 +86,12 @@ namespace Tracker.Controllers
             {
                 return NotFound();
             }
+            ViewBag.MainTaskId = new SelectList(
+               _context.mainTasks,
+                "Id",
+                "Name",
+                taskItem.MainTaskId
+            );
             return View(taskItem);
         }
 
@@ -86,7 +100,7 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Status,Priority,CreatedAt,DueDate")] TaskItem taskItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,Title,Description,Status,Priority,CreatedAt,DueDate")] TaskItem taskItem)
         {
             if (id != taskItem.Id)
             {
@@ -113,6 +127,13 @@ namespace Tracker.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
+            ViewBag.MainTaskId = new SelectList(
+               _context.mainTasks,
+                "Id",
+                "Name",
+                taskItem.MainTaskId
+            );
+
             return View(taskItem);
         }
 
@@ -158,7 +179,57 @@ namespace Tracker.Controllers
         {
             return _context.TaskItems.Any(e => e.Id == id);
         }
-        public IActionResult GetCalendarEvents()
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, Status status)
+        {
+            var task = await _context.TaskItems.FindAsync(id);
+            if (task == null)
+                return NotFound();
+
+            task.Status = status;
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult Report()
+        {
+            var now = DateTime.Now;
+
+            var tasks = _context.TaskItems
+                .Include(t => t.MainTask)
+                .ToList();
+
+            var model = new TaskReportViewModel
+            {
+                TotalTasks = tasks.Count,
+                PendingCount = tasks.Count(t => t.Status == Status.Pending),
+                InProgressCount = tasks.Count(t => t.Status == Status.InProgress),
+                CompletedCount = tasks.Count(t => t.Status == Status.Completed),
+                CancelledCount = tasks.Count(t => t.Status == Status.Cancelled),
+
+                OverdueCount = tasks.Count(t =>
+                    t.EndTime.HasValue &&
+                    t.EndTime.Value < now &&
+                    t.Status != Status.Completed
+                )
+            };
+
+            model.TasksPerMainTask = tasks
+                .GroupBy(t => t.MainTask?.Name ?? "No Main Task")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            return View(model);
+        }
+
+
+
+
+
+
+        /*public IActionResult GetCalendarEvents()
         {
             var events = _context.TaskItems
                 .Where(t => t.StartTime.HasValue)
@@ -180,7 +251,7 @@ namespace Tracker.Controllers
             return View();
         }
 
-        /*[HttpPost]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Timer([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")] TaskItem taskItem)
         {

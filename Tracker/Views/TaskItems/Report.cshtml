@@ -1,0 +1,44 @@
+﻿@model Tracker.Models.ViewModels.TaskReportViewModel
+
+@{
+    ViewData["Title"] = "Tasks Report";
+}
+
+<h2>📊 Tasks Report</h2>
+
+<hr />
+
+<h4>Summary</h4>
+<ul>
+    <li><strong>Total Tasks:</strong> @Model.TotalTasks</li>
+    <li>Pending: @Model.PendingCount</li>
+    <li>In Progress: @Model.InProgressCount</li>
+    <li>Completed: @Model.CompletedCount</li>
+    <li>Cancelled: @Model.CancelledCount</li>
+    <li class="text-danger">Overdue: @Model.OverdueCount</li>
+</ul>
+
+<hr />
+
+<h4>Tasks per Main Task</h4>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Main Task</th>
+            <th>Task Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.TasksPerMainTask)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>@item.Value</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Back to Tasks</a>
+
