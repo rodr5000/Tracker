@@ -1,4 +1,6 @@
-﻿namespace Tracker.Models
+﻿using Tracker.Models.Enums;
+
+namespace Tracker.Models
 {
     public class MainTask
     {

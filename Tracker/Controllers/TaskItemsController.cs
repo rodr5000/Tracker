@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
+using Tracker.Models.Enums;
 using Tracker.Models.ViewModels;
 
 namespace Tracker.Controllers

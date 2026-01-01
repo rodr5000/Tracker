@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Tracker.Models
+namespace Tracker.Models.Enums
 {
     public enum Priority
     {
