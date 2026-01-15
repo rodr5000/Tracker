@@ -22,7 +22,7 @@ namespace Tracker.Controllers
         // GET: MainTasks
         public async Task<IActionResult> Index()
         {
-            return View(await _context.mainTasks.ToListAsync());
+            return View(await _context.MainTasks.ToListAsync());
         }
 
         // GET: MainTasks/Details/5
@@ -33,7 +33,7 @@ namespace Tracker.Controllers
                 return NotFound();
             }
 
-            var mainTask = await _context.mainTasks
+            var mainTask = await _context.MainTasks
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (mainTask == null)
             {
@@ -54,7 +54,7 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask)
+        public async Task<IActionResult> Create([Bind("Id,Name,Description,CreatedAt,DueDate,Duration")] MainTask mainTask)
         {
             if (ModelState.IsValid)
             {
@@ -73,7 +73,7 @@ namespace Tracker.Controllers
                 return NotFound();
             }
 
-            var mainTask = await _context.mainTasks.FindAsync(id);
+            var mainTask = await _context.MainTasks.FindAsync(id);
             if (mainTask == null)
             {
                 return NotFound();
@@ -124,7 +124,7 @@ namespace Tracker.Controllers
                 return NotFound();
             }
 
-            var mainTask = await _context.mainTasks
+            var mainTask = await _context.MainTasks
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (mainTask == null)
             {
@@ -139,19 +139,21 @@ namespace Tracker.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var mainTask = await _context.mainTasks.FindAsync(id);
+            var mainTask = await _context.MainTasks.FindAsync(id);
             if (mainTask != null)
             {
-                _context.mainTasks.Remove(mainTask);
+                _context.MainTasks.Remove(mainTask);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
+
+
         private bool MainTaskExists(int id)
         {
-            return _context.mainTasks.Any(e => e.Id == id);
+            return _context.MainTasks.Any(e => e.Id == id);
         }
     }
 }

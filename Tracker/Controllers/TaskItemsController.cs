@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Build.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
@@ -44,7 +45,7 @@ namespace Tracker.Controllers
         // GET: TaskItems/Create
         public IActionResult Create()
         {
-            ViewBag.MainTaskId = new SelectList(_context.mainTasks, "Id", "Name");
+            ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name");
             return View();
         }
 
@@ -53,8 +54,17 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")] TaskItem taskItem)
+        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,TimeTaken")] Models.TaskItem taskItem)
         {
+
+            foreach (var state in ModelState)
+            {
+                foreach (var error in state.Value.Errors)
+                {
+                    Console.WriteLine($"{state.Key}: {error.ErrorMessage}");
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(taskItem);
@@ -64,7 +74,7 @@ namespace Tracker.Controllers
 
             // 🔴 YOU MUST RELOAD THE DROPDOWN
             ViewBag.MainTaskId = new SelectList(
-                _context.mainTasks,
+                _context.MainTasks,
                 "Id",
                 "Name",
                 taskItem.MainTaskId
@@ -88,7 +98,7 @@ namespace Tracker.Controllers
                 return NotFound();
             }
             ViewBag.MainTaskId = new SelectList(
-               _context.mainTasks,
+               _context.MainTasks,
                 "Id",
                 "Name",
                 taskItem.MainTaskId
@@ -101,7 +111,7 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,Title,Description,Status,Priority,CreatedAt,DueDate")] TaskItem taskItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,Title,Description,Status,Priority,CreatedAt,DueDate,TimeTaken")] Models.TaskItem taskItem)
         {
             if (id != taskItem.Id)
             {
@@ -129,7 +139,7 @@ namespace Tracker.Controllers
                 return RedirectToAction(nameof(Index));
             }
             ViewBag.MainTaskId = new SelectList(
-               _context.mainTasks,
+               _context.MainTasks,
                 "Id",
                 "Name",
                 taskItem.MainTaskId
@@ -183,6 +193,7 @@ namespace Tracker.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, Status status)
         {
             var task = await _context.TaskItems.FindAsync(id);
@@ -190,10 +201,26 @@ namespace Tracker.Controllers
                 return NotFound();
 
             task.Status = status;
-            await _context.SaveChangesAsync();
 
+            // If completed and user did not set EndTime, set it
+            if (status == Status.Completed)
+            {
+                task.EndTime ??= DateTime.Now;
+
+                // Do NOT recalculate TimeTaken
+                // We trust the user input
+                if (!task.TimeTaken.HasValue)
+                {
+                    // optional fallback if they forgot to enter it
+                    if (task.StartTime.HasValue)
+                        task.TimeTaken = task.EndTime.Value - task.StartTime.Value;
+                }
+            }
+
+            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
 
         public IActionResult Report()
         {
@@ -225,6 +252,7 @@ namespace Tracker.Controllers
             return View(model);
         }
 
+       
 
 
 

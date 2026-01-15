@@ -26,7 +26,7 @@
             };
 
             <div class="list-group-item list-group-item-action mb-2 rounded shadow-sm task-card @statusClass"
-                 style="border-left-width: 10px;">
+            style="border-left-width: 10px;">
 
 
                 <div class="d-flex justify-content-between align-items-start">
@@ -37,8 +37,8 @@
                         <!-- ✅ Clickable title only -->
                         <h5 class="mb-1">
                             <a asp-action="Details"
-                               asp-route-id="@task.Id"
-                               class="text-decoration-none text-dark">
+                            asp-route-id="@task.Id"
+                            class="text-decoration-none text-dark">
                                 @task.Title
                             </a>
                         </h5>
@@ -60,24 +60,40 @@
                             <input type="hidden" name="id" value="@task.Id" />
 
                             <select name="status"
-                                    class="form-select form-select-sm"
-                                    onchange="this.form.submit()">
+                            class="form-select form-select-sm"
+                            onchange="this.form.submit()">
                                 @foreach (Status s in Enum.GetValues(typeof(Status)))
                                 {
                                     <option value="@s" selected="@(s == task.Status)">
                                         @s
                                     </option>
+
                                 }
                             </select>
                         </form>
                     </div>
                 </div>
-
+                @if (task.Status == Status.Completed && task.MainTask != null)
+                {
+                    task.MainTask.Duration -= task.TimeTaken;
+                }
                 @if (task.EndTime.HasValue)
                 {
                     <div class="small mt-2 text-end text-muted">
                         Due: @task.EndTime.Value.ToString("dd MMM yyyy")
                     </div>
+                }
+                @if (task.TimeTaken.HasValue)
+                {
+                    <span class="text-muted">
+                        Time taken: @task.TimeTaken.Value.ToString(@"hh\:mm\:ss")
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">
+                        Time taken: --
+                    </span>
                 }
             </div>
         }
@@ -86,6 +102,7 @@
 
 
 </div>
+
 <a class="expand-btn dark" asp-action="Report" asp-route-filter="overdue">
     📊 Report
 </a>

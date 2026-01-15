@@ -20,17 +20,19 @@
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="TaskCyclicality" class="form-label"></label>
-                <select asp-for="TaskCyclicality" class="form-control"
-                        asp-items="Html.GetEnumSelectList<TaskCyclicality>()">
-                </select>
-                <span asp-validation-for="TaskCyclicality" class="text-danger"></span>
-            </div>
-            <div class="form-group">
                 <label asp-for="Description" class="control-label"></label>
                 <input asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
+            <div class="form-group">
+                <label asp-for="Duration" class="control-label"></label>
+                <input asp-for="Duration"
+                       class="form-control"
+                       type="time"
+                       step="1" />
+                <span asp-validation-for="Duration" class="text-danger"></span>
+            </div>
+
             <div class="form-group">
                 <label asp-for="CreatedAt" class="control-label"></label>
                 <input asp-for="CreatedAt" class="form-control" />

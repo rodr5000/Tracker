@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Razor.Language.Intermediate;
 using Tracker.Models.Enums;
 
 namespace Tracker.Models 
@@ -20,6 +21,15 @@ namespace Tracker.Models
 
         [StringLength(500)]
         public string Description { get; set; }= string.Empty;
+
+        public long? TimeTakenTicks { get; set; }
+
+        [NotMapped]
+        public TimeSpan? TimeTaken
+        {
+            get => TimeTakenTicks.HasValue ? TimeSpan.FromTicks(TimeTakenTicks.Value) : null;
+            set => TimeTakenTicks = value?.Ticks;
+        }
 
         [Required]
         public Status Status { get; set; } = Status.Pending;
