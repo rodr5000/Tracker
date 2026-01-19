@@ -54,14 +54,25 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,TimeTaken")] Models.TaskItem taskItem)
+        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,TimeTaken")] Models.TaskItem taskItem,
+    int? Hours,
+    int? Minutes)
         {
-
-            foreach (var state in ModelState)
+            if (Hours.HasValue || Minutes.HasValue)
             {
-                foreach (var error in state.Value.Errors)
+                taskItem.TimeTaken = new TimeSpan(Hours ?? 0, Minutes ?? 0, 0);
+            }
+
+            if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null)
+            {
+                var mainTask = await _context.MainTasks.FindAsync(taskItem.MainTaskId);
+                if (mainTask != null && taskItem.TimeTaken.HasValue)
                 {
-                    Console.WriteLine($"{state.Key}: {error.ErrorMessage}");
+                    mainTask.Duration ??= TimeSpan.Zero;
+                    mainTask.Duration -= taskItem.TimeTaken.Value;
+
+                    if (mainTask.Duration < TimeSpan.Zero)
+                        mainTask.Duration = TimeSpan.Zero;
                 }
             }
 
@@ -72,21 +83,16 @@ namespace Tracker.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // 🔴 YOU MUST RELOAD THE DROPDOWN
-            ViewBag.MainTaskId = new SelectList(
-                _context.MainTasks,
-                "Id",
-                "Name",
-                taskItem.MainTaskId
-            );
-
+            ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name", taskItem.MainTaskId);
             return View(taskItem);
         }
+
 
 
         // GET: TaskItems/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+           
             if (id == null)
             {
                 return NotFound();
@@ -111,42 +117,67 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,Title,Description,Status,Priority,CreatedAt,DueDate,TimeTaken")] Models.TaskItem taskItem)
+        public async Task<IActionResult> Edit(
+    int id,
+    [Bind("Id,MainTaskId,Title,Description,Status,Priority,StartTime,EndTime")]
+    Models.TaskItem taskItem,
+    int? Hours,
+    int? Minutes)
         {
-            if (id != taskItem.Id)
-            {
+            var existingTask = await _context.TaskItems
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (existingTask == null)
                 return NotFound();
+
+            // Preserve EndTime if user didn't touch it
+            taskItem.EndTime ??= existingTask.EndTime;
+
+            // Preserve TimeTaken unless user re-enters it
+            if (Hours.HasValue || Minutes.HasValue)
+            {
+                taskItem.TimeTaken = new TimeSpan(Hours ?? 0, Minutes ?? 0, 0);
+            }
+            else
+            {
+                taskItem.TimeTaken = existingTask.TimeTaken;
+            }
+
+            // Duration adjustment logic
+            var delta = TimeSpan.Zero;
+
+            if (existingTask.Status == Status.Completed)
+                delta += existingTask.TimeTaken ?? TimeSpan.Zero;
+
+            if (taskItem.Status == Status.Completed)
+                delta -= taskItem.TimeTaken ?? TimeSpan.Zero;
+
+            if (taskItem.MainTaskId != null && delta != TimeSpan.Zero)
+            {
+                var mainTask = await _context.MainTasks.FindAsync(taskItem.MainTaskId);
+                if (mainTask != null)
+                {
+                    mainTask.Duration ??= TimeSpan.Zero;
+                    mainTask.Duration += delta;
+
+                    if (mainTask.Duration < TimeSpan.Zero)
+                        mainTask.Duration = TimeSpan.Zero;
+                }
             }
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(taskItem);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TaskItemExists(taskItem.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(taskItem);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewBag.MainTaskId = new SelectList(
-               _context.MainTasks,
-                "Id",
-                "Name",
-                taskItem.MainTaskId
-            );
 
+            ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name", taskItem.MainTaskId);
             return View(taskItem);
         }
+
+
 
         // GET: TaskItems/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -194,32 +225,38 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, Status status)
         {
-            var task = await _context.TaskItems.FindAsync(id);
+            var task = await _context.TaskItems
+                .Include(t => t.MainTask)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
             if (task == null)
                 return NotFound();
 
             task.Status = status;
 
-            // If completed and user did not set EndTime, set it
-            if (status == Status.Completed)
+            if (status == Status.Completed && task.TimeTaken.HasValue && task.MainTask != null)
             {
-                task.EndTime ??= DateTime.Now;
+                var mainTask = task.MainTask;
 
-                // Do NOT recalculate TimeTaken
-                // We trust the user input
-                if (!task.TimeTaken.HasValue)
-                {
-                    // optional fallback if they forgot to enter it
-                    if (task.StartTime.HasValue)
-                        task.TimeTaken = task.EndTime.Value - task.StartTime.Value;
-                }
+                // If MainTask has no duration yet, initialize it
+                if (!mainTask.Duration.HasValue)
+                    mainTask.Duration = TimeSpan.Zero;
+
+                // Reduce duration by task time
+                mainTask.Duration -= task.TimeTaken;
+
+                // Optional safety: don’t go below zero
+                if (mainTask.Duration < TimeSpan.Zero)
+                    mainTask.Duration = TimeSpan.Zero;
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
 
 
         public IActionResult Report()

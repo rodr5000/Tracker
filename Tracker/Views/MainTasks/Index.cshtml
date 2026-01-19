@@ -23,9 +23,9 @@
 
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            @if (!string.IsNullOrEmpty(item.Description))
+                            @if (!string.IsNullOrEmpty(item.Name))
                             {
-                                <p class="mt-2 text-secondary">@item.Description</p>
+                                <p class="text-decoration-none text-bg-dark">@item.Name</p>
                             }
                         </div>
 
@@ -48,7 +48,8 @@
                         @if (item.Duration.HasValue)
                         {
                             <div class="small text-muted">
-                                Duration: @item.Duration.Value.ToString(@"hh\:mm\:ss")
+                                Duration: @((int)item.Duration.Value.TotalHours):@item.Duration.Value.Minutes.ToString("00"):@item.Duration.Value.Seconds.ToString("00")
+
                             </div>
                         }
                     </div>

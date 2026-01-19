@@ -44,7 +44,10 @@
             </div>
             <div class="form-group">
                 <label asp-for="TimeTaken" class="control-label"></label>
-                <input asp-for="TimeTaken" class="form-control" placeholder="hh:mm:ss" />
+                <input asp-for="TimeTaken"
+                       class="form-control"
+                       type="time"
+                       step="1" />
                 <span asp-validation-for="TimeTaken" class="text-danger"></span>
             </div>
 

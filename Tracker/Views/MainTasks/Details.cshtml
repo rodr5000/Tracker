@@ -24,9 +24,12 @@
         </dd>
         @if (Model.Duration.HasValue)
         {
-            <div class="small text-muted">
-                Duration: @Model.Duration.Value.ToString(@"hh\:mm\:ss")
-            </div>
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.Duration)
+            </dt>
+            <dd class="col-sm-10">
+                @((int)Model.Duration.Value.TotalHours):@Model.Duration.Value.Minutes.ToString("00"):@Model.Duration.Value.Seconds.ToString("00")
+            </dd>
         }
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.CreatedAt)

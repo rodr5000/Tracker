@@ -54,8 +54,13 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,CreatedAt,DueDate,Duration")] MainTask mainTask)
+        public async Task<IActionResult> Create(
+    [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask,
+    int Hours,
+    int Minutes)
         {
+            mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
+
             if (ModelState.IsValid)
             {
                 _context.Add(mainTask);
@@ -64,6 +69,7 @@ namespace Tracker.Controllers
             }
             return View(mainTask);
         }
+
 
         // GET: MainTasks/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -86,8 +92,11 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask ,int Hours,
+    int Minutes)
         {
+            mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
+
             if (id != mainTask.Id)
             {
                 return NotFound();

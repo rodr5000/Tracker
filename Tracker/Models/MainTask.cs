@@ -17,7 +17,8 @@ namespace Tracker.Models
         public DateTime? DueDate { get; set; }
         public long? DurationTicks { get; set; }
 
-        public TimeSpan? Duration 
+        [NotMapped]
+        public TimeSpan? Duration
         {
             get => DurationTicks.HasValue ? TimeSpan.FromTicks(DurationTicks.Value) : null;
             set => DurationTicks = value?.Ticks;
