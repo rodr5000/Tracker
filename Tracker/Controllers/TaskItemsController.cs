@@ -289,49 +289,51 @@ namespace Tracker.Controllers
             return View(model);
         }
 
-       
 
 
-
-
-
-        /*public IActionResult GetCalendarEvents()
+        public IActionResult GetCalendarEvents()
         {
-            var events = _context.TaskItems
-                .Where(t => t.StartTime.HasValue)
+            var tasks = _context.TaskItems
+                .Where(t => t.StartTime != null && t.EndTime != null)
                 .Select(t => new
                 {
                     id = t.Id,
                     title = t.Title,
-                    start = t.EndTime.Value.ToString("yyyy-MM-dd"),
-                    allDay = true,
-                    status = t.Status.ToString() // המרת ה-enum למחרוזת
+                    start = t.StartTime,
+                    end = t.EndTime,
+                    backgroundColor = t.Status == Status.Completed ? "#4CAF50" :
+                                      t.Status == Status.InProgress ? "#2196F3" :
+                                      "#FFC107",
+                     status = t.Status.ToString(),
+                    timeTaken = t.TimeTaken.HasValue ? t.TimeTaken.Value.ToString(@"hh\:mm") : null,
+                    description = t.Description
                 })
                 .ToList();
 
-            return Json(events);
+            return Json(tasks);
         }
-        public IActionResult Timer()
-        {
-            ViewBag.MainTaskId = new SelectList(_context.mainTasks, "Id", "Name");
-            return View();
-        }
-
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Timer([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")] TaskItem taskItem)
+        public async Task<IActionResult> UpdateTime([FromBody] UpdateTimeDto dto)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(taskItem);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
+            var task = await _context.TaskItems.FindAsync(dto.Id);
+            if (task == null) return NotFound();
+
+            task.StartTime = dto.StartTime;
+            task.EndTime = dto.EndTime;
+            task.TimeTaken = dto.EndTime - dto.StartTime;
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        public class UpdateTimeDto
+        {
+            public int Id { get; set; }
+            public DateTime StartTime { get; set; }
+            public DateTime EndTime { get; set; }
+        }
 
 
-
-            return View(taskItem);
-        }*/
 
 
     }

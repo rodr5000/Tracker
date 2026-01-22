@@ -1,37 +1,68 @@
-﻿@model IEnumerable<Tracker.Models.TaskItem>
-@{
-    ViewData["Title"] = "Task Calendar";
+﻿@{
+    ViewData["Title"] = "Calendar";
 }
 
+<div id="calendar"></div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
+            const calendarEl = document.getElementById('calendar');
+            if (!calendarEl) return;
 
-<div class="container mt-4">
-    <h2 class="mb-4">לוח שנה - תאריכי סיום משימות</h2>
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                slotMinTime: "06:00:00",
+                slotMaxTime: "22:00:00",
+                nowIndicator: true,
+                editable: true,
+                selectable: true,
+                height: "auto",
+                events: '/TaskItems/GetCalendarEvents',
+                as
+                select: function (info) {
+                    window.location.href =
+                        `/TaskItems/Create?start=${info.startStr}&end=${info.endStr}`;
+                },
 
-    <div id="calendar"></div>
-</div>
+                eventClick: function (info) {
+                    window.location.href = `/TaskItems/Edit/${info.event.id}`;
+                },
 
-<script>
-    //מחכה שהעמוד יטען
-    document.addEventListener('DOMContentLoaded', function () {
-        var calendarEl = document.getElementById('calendar');
+                eventDrop: function (info) {
+                    updateTaskTime(info.event);
+                },
 
-        //מחלק את העמוד לחודשים
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
+                eventResize: function (info) {
+                    updateTaskTime(info.event);
+                }
+            });
 
-            
-            events: '/Task/GetCalendarEvents', // נקבל נתונים מהשרת
-            
-            //כשלוחצים על היום זה מעביר לדף נתונים לאותו יום
-            eventClick: function (info) {
-                window.location.href = '/Task/Details/' + info.event.id;
+            calendar.render();
+        });
+
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            events: '/TaskItems/GetCalendarEvents',
+
+            eventDidMount: function (info) {
+                const tooltipContent = `
+                    <strong>${info.event.title}</strong><br/>
+                    Status: ${info.event.extendedProps.status}<br/>
+                    Time Taken: ${info.event.extendedProps.timeTaken || "Not set"}<br/>
+                    ${info.event.extendedProps.description || ""}
+                `;
+
+                new bootstrap.Tooltip(info.el, {
+                    title: tooltipContent,
+                    html: true,
+                    placement: "top",
+                    trigger: "hover",
+                    container: "body"
+                });
             }
         });
 
-        calendar.render();
-    });
-</script>
+    </script>
+}
