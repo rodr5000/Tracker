@@ -4,10 +4,10 @@ namespace Tracker.Models.Enums
 {
     public enum Status
     {
-        Pending,
+        Pending = 0,
         [Display(Name ="In Progress")]
-        InProgress,
-        Completed,
-        Cancelled
+        InProgress = 1,
+        Completed = 2 ,
+        Cancelled = 3
     }
 }

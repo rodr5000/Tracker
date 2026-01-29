@@ -43,15 +43,6 @@
                 <span asp-validation-for="Priority" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="TimeTaken" class="control-label"></label>
-                <input asp-for="TimeTaken"
-                       class="form-control"
-                       type="time"
-                       step="1" />
-                <span asp-validation-for="TimeTaken" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
                 <label asp-for="StartTime" class="control-label"></label>
                 <input asp-for="StartTime" type="datetime-local" class="form-control" />
                 <span asp-validation-for="StartTime" class="text-danger"></span>
@@ -61,6 +52,7 @@
                 <input asp-for="EndTime" type="datetime-local" class="form-control" />
                 <span asp-validation-for="EndTime" class="text-danger"></span>
             </div>
+
             <div class="form-group">
                 <input type="submit" value="Create" class="expand-btn primary" />
             </div>

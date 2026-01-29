@@ -54,19 +54,26 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,TimeTaken")] Models.TaskItem taskItem,
-    int? Hours,
-    int? Minutes)
+        public async Task<IActionResult> Create(
+    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")]
+    Models.TaskItem taskItem)
         {
-            if (Hours.HasValue || Minutes.HasValue)
+            // Always calculate TimeTaken from times
+            if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
             {
-                taskItem.TimeTaken = new TimeSpan(Hours ?? 0, Minutes ?? 0, 0);
+                taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
+
+                if (taskItem.TimeTaken < TimeSpan.Zero)
+                {
+                    ModelState.AddModelError("", "End time must be after start time.");
+                }
             }
 
-            if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null)
+            // Reduce MainTask.Duration if task is completed
+            if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null && taskItem.TimeTaken.HasValue)
             {
                 var mainTask = await _context.MainTasks.FindAsync(taskItem.MainTaskId);
-                if (mainTask != null && taskItem.TimeTaken.HasValue)
+                if (mainTask != null)
                 {
                     mainTask.Duration ??= TimeSpan.Zero;
                     mainTask.Duration -= taskItem.TimeTaken.Value;
@@ -89,6 +96,7 @@ namespace Tracker.Controllers
 
 
 
+
         // GET: TaskItems/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -97,6 +105,7 @@ namespace Tracker.Controllers
             {
                 return NotFound();
             }
+
 
             var taskItem = await _context.TaskItems.FindAsync(id);
             if (taskItem == null)
@@ -120,9 +129,7 @@ namespace Tracker.Controllers
         public async Task<IActionResult> Edit(
     int id,
     [Bind("Id,MainTaskId,Title,Description,Status,Priority,StartTime,EndTime")]
-    Models.TaskItem taskItem,
-    int? Hours,
-    int? Minutes)
+    Models.TaskItem taskItem)
         {
             var existingTask = await _context.TaskItems
                 .AsNoTracking()
@@ -131,20 +138,22 @@ namespace Tracker.Controllers
             if (existingTask == null)
                 return NotFound();
 
-            // Preserve EndTime if user didn't touch it
-            taskItem.EndTime ??= existingTask.EndTime;
-
-            // Preserve TimeTaken unless user re-enters it
-            if (Hours.HasValue || Minutes.HasValue)
+            // Always calculate TimeTaken from times
+            if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
             {
-                taskItem.TimeTaken = new TimeSpan(Hours ?? 0, Minutes ?? 0, 0);
+                taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
+
+                if (taskItem.TimeTaken < TimeSpan.Zero)
+                {
+                    ModelState.AddModelError("", "End time must be after start time.");
+                }
             }
             else
             {
-                taskItem.TimeTaken = existingTask.TimeTaken;
+                taskItem.TimeTaken = null;
             }
 
-            // Duration adjustment logic
+            // Adjust MainTask.Duration
             var delta = TimeSpan.Zero;
 
             if (existingTask.Status == Status.Completed)
@@ -176,6 +185,7 @@ namespace Tracker.Controllers
             ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name", taskItem.MainTaskId);
             return View(taskItem);
         }
+
 
 
 
@@ -303,15 +313,13 @@ namespace Tracker.Controllers
                     end = t.EndTime,
                     backgroundColor = t.Status == Status.Completed ? "#4CAF50" :
                                       t.Status == Status.InProgress ? "#2196F3" :
-                                      "#FFC107",
-                     status = t.Status.ToString(),
-                    timeTaken = t.TimeTaken.HasValue ? t.TimeTaken.Value.ToString(@"hh\:mm") : null,
-                    description = t.Description
-                })
+                                      "#FFC107"
+               })
                 .ToList();
 
             return Json(tasks);
         }
+
         [HttpPost]
         public async Task<IActionResult> UpdateTime([FromBody] UpdateTimeDto dto)
         {
@@ -326,12 +334,14 @@ namespace Tracker.Controllers
             return Ok();
         }
 
+
         public class UpdateTimeDto
         {
             public int Id { get; set; }
             public DateTime StartTime { get; set; }
             public DateTime EndTime { get; set; }
         }
+
 
 
 

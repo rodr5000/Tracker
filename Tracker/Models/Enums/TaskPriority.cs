@@ -5,13 +5,13 @@ namespace Tracker.Models.Enums
     public enum Priority
     {
         [Display(Name = "Low Priority")]
-        Low,
+        Low = 0,
         [Display(Name = "Med Priority")]
-        Medium,
+        Medium = 1,
         [Display(Name = "High Priority")]
-        High,
+        High = 2,
         [Display(Name = "Critical Priority")]
-        Critical
+        Critical = 3
     }
 
 }

@@ -6,12 +6,10 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+               document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
 
-            const calendarEl = document.getElementById('calendar');
-            if (!calendarEl) return;
-
-            const calendar = new FullCalendar.Calendar(calendarEl, {
+            var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
                 slotMinTime: "06:00:00",
                 slotMaxTime: "22:00:00",
@@ -19,9 +17,12 @@
                 editable: true,
                 selectable: true,
                 height: "auto",
+                timeZone: 'local',
+
                 events: '/TaskItems/GetCalendarEvents',
-                as
+
                 select: function (info) {
+                    // Create new task by selecting time
                     window.location.href =
                         `/TaskItems/Create?start=${info.startStr}&end=${info.endStr}`;
                 },
@@ -42,27 +43,27 @@
             calendar.render();
         });
 
-                var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'timeGridWeek',
-            events: '/TaskItems/GetCalendarEvents',
+        function toLocalDateTimeString(date) {
+            return date.getFullYear() + "-" +
+                String(date.getMonth() + 1).padStart(2, '0') + "-" +
+                String(date.getDate()).padStart(2, '0') + "T" +
+                String(date.getHours()).padStart(2, '0') + ":" +
+                String(date.getMinutes()).padStart(2, '0') + ":00";
+        }
 
-            eventDidMount: function (info) {
-                const tooltipContent = `
-                    <strong>${info.event.title}</strong><br/>
-                    Status: ${info.event.extendedProps.status}<br/>
-                    Time Taken: ${info.event.extendedProps.timeTaken || "Not set"}<br/>
-                    ${info.event.extendedProps.description || ""}
-                `;
+        function updateTaskTime(event) {
+            fetch('/TaskItems/UpdateTime', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: event.id,
+                    startTime: toLocalDateTimeString(event.start),
+                    endTime: toLocalDateTimeString(event.end)
+                })
+            });
+        }
 
-                new bootstrap.Tooltip(info.el, {
-                    title: tooltipContent,
-                    html: true,
-                    placement: "top",
-                    trigger: "hover",
-                    container: "body"
-                });
-            }
-        });
+
 
     </script>
 }
