@@ -22,6 +22,9 @@ namespace Tracker.Controllers
         // GET: MainTasks
         public async Task<IActionResult> Index()
         {
+            var mainTasks = await _context.MainTasks
+                              .Include(m => m.TaskItems) // <--- CRITICAL
+                              .ToListAsync();
             return View(await _context.MainTasks.ToListAsync());
         }
 

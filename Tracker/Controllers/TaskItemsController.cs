@@ -68,6 +68,23 @@ namespace Tracker.Controllers
                     ModelState.AddModelError("", "End time must be after start time.");
                 }
             }
+            if (taskItem.MainTaskId == null || taskItem.MainTaskId == 0)
+            {
+                // 2. Look for an existing "General" MainTask
+                var generalTask = await _context.MainTasks
+                    .FirstOrDefaultAsync(m => m.Name == "General");
+
+                // 3. If it doesn't exist, create it on the fly
+                if (generalTask == null)
+                {
+                    generalTask = new MainTask { Name = "General", DurationTicks = 0 };
+                    _context.Add(generalTask);
+                    await _context.SaveChangesAsync();
+                }
+
+                // 4. Assign the TaskItem to "General"
+                taskItem.MainTaskId = generalTask.Id;
+            }
 
             // Reduce MainTask.Duration if task is completed
             if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null && taskItem.TimeTaken.HasValue)

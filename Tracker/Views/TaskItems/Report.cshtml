@@ -8,37 +8,98 @@
 
 <hr />
 
-<h4>Summary</h4>
-<ul>
-    <li><strong>Total Tasks:</strong> @Model.TotalTasks</li>
-    <li>Pending: @Model.PendingCount</li>
-    <li>In Progress: @Model.InProgressCount</li>
-    <li>Completed: @Model.CompletedCount</li>
-    <li>Cancelled: @Model.CancelledCount</li>
-    <li class="text-danger">Overdue: @Model.OverdueCount</li>
-</ul>
+<div class="row align-items-start">
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Status Distribution</div>
+            <div class="card-body">
+                <canvas id="taskChart"></canvas>
+            </div>
+        </div>
+    </div>
 
-<hr />
-
-<h4>Tasks per Main Task</h4>
-
-<table class="table table-bordered">
-    <thead>
+    <div class="col-md-8">
+        <h4>Tasks per Main Task</h4>
+        <table class="table table-hover shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Main Task</th>
+                    <th>Task Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.TasksPerMainTask)
+                {
+                    <tr>
+                        <td>@item.Key</td>
+                        <td><span class="badge bg-primary">@item.Value</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+<table class="table table-hover align-middle shadow-sm bg-white">
+    <thead class="table-dark">
         <tr>
             <th>Main Task</th>
-            <th>Task Count</th>
+            <th style="width: 40%">Progress / Count</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var item in Model.TasksPerMainTask)
         {
+            // Simple logic: calculate % of total tasks for this bar
+            var percentage = Model.TotalTasks > 0 ? (item.Value * 100 / Model.TotalTasks) : 0;
             <tr>
-                <td>@item.Key</td>
-                <td>@item.Value</td>
+                <td class="fw-bold">@item.Key</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="progress flex-grow-1 me-2" style="height: 10px;">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: @percentage%"></div>
+                        </div>
+                        <span class="badge bg-secondary">@item.Value</span>
+                    </div>
+                </td>
             </tr>
         }
     </tbody>
 </table>
 
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById('taskChart');
+
+        // Debug check: this will show in your browser console (F12) if it fails
+        if (!canvas) {
+            console.error("Could not find canvas element!");
+            return;
+        }
+
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Completed', 'Cancelled'],
+                datasets: [{
+                    data: [@Model.PendingCount, @Model.InProgressCount, @Model.CompletedCount, @Model.CancelledCount],
+                    backgroundColor: ['#6c757d', '#ffc107', '#198754', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
 <a asp-action="Index" class="btn btn-secondary">Back to Tasks</a>
 
