@@ -249,7 +249,13 @@ namespace Tracker.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("MainTasks");
                 });
@@ -290,9 +296,15 @@ namespace Tracker.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MainTaskId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("TaskItems");
                 });
@@ -377,13 +389,32 @@ namespace Tracker.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Tracker.Models.MainTask", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Tracker.Models.TaskItem", b =>
                 {
                     b.HasOne("Tracker.Models.MainTask", "MainTask")
                         .WithMany("TaskItems")
                         .HasForeignKey("MainTaskId");
 
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("MainTask");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Tracker.Models.TimeLog", b =>

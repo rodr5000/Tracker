@@ -1,31 +1,44 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Build.Utilities;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
 
+
 namespace Tracker.Controllers
 {
+    [Authorize]
     public class MainTasksController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public MainTasksController(ApplicationDbContext context)
+        public MainTasksController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: MainTasks
         public async Task<IActionResult> Index()
         {
-            var mainTasks = await _context.MainTasks
-                              .Include(m => m.TaskItems) // <--- CRITICAL
-                              .ToListAsync();
-            return View(await _context.MainTasks.ToListAsync());
+            // Get the current user ID
+            var userId = _userManager.GetUserId(User);
+
+            // .Include is the magic that fills the item.TaskItems list
+            var tasks = await _context.MainTasks
+                .Include(m => m.TaskItems)
+                .Where(m => m.UserId == userId)
+                .ToListAsync();
+
+            return View(tasks);
         }
 
         // GET: MainTasks/Details/5
@@ -58,11 +71,19 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask,
+    [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask, // Removed User/UserId from Bind
     int Hours,
     int Minutes)
         {
+            var userId = _userManager.GetUserId(User);
+
+            // Assign values manually
+            mainTask.UserId = userId;
             mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
+
+            // REMOVE these from validation since they aren't coming from the form
+            ModelState.Remove("UserId");
+            ModelState.Remove("User");
 
             if (ModelState.IsValid)
             {
@@ -70,6 +91,8 @@ namespace Tracker.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+
+            // If we got here, check the Errors collection in your debugger to see what else failed
             return View(mainTask);
         }
 
@@ -95,15 +118,23 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask ,int Hours,
-    int Minutes)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask, int Hours, int Minutes)
         {
-            mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
-
             if (id != mainTask.Id)
             {
                 return NotFound();
             }
+
+            // 1. Re-assign the UserId so it doesn't get overwritten with NULL
+            var userId = _userManager.GetUserId(User);
+            mainTask.UserId = userId;
+
+            // 2. Set the Duration from the extra inputs
+            mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
+
+            // 3. Clear validation for properties we handle manually
+            ModelState.Remove("UserId");
+            ModelState.Remove("User");
 
             if (ModelState.IsValid)
             {
@@ -160,6 +191,9 @@ namespace Tracker.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+
+
+
 
 
 

@@ -1,6 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Razor.Language.Intermediate;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Tracker.Models.Enums;
 
 namespace Tracker.Models 
@@ -10,7 +12,13 @@ namespace Tracker.Models
 
         public int Id { get; set; }
 
+        [ValidateNever]
+        public string UserId { get; set; }
+
+        [ValidateNever]
+        public IdentityUser User { get; set; }
         public int? MainTaskId { get; set; }
+        [ValidateNever]
         public MainTask? MainTask { get; set; } 
 
 

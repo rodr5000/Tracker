@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations.Schema;
 using Tracker.Models.Enums;
 
 namespace Tracker.Models
@@ -8,7 +10,11 @@ namespace Tracker.Models
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
+        [ValidateNever]
+        public string UserId { get; set; }
 
+        [ValidateNever]
+        public IdentityUser User { get; set; }
         public string Description { get; set; } = string.Empty;
 
         //public TimeSpan? Duration { get; set; }

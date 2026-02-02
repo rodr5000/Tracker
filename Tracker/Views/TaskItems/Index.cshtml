@@ -73,10 +73,6 @@
                         </form>
                     </div>
                 </div>
-                @if (task.Status == Status.Completed && task.MainTask != null)
-                {
-                    task.MainTask.Duration -= task.TimeTaken;
-                }
                 @if (task.EndTime.HasValue)
                 {
                     <div class="small mt-2 text-end text-muted">

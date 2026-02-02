@@ -1,30 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Build.Utilities;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Tracker.Data;
 using Tracker.Models;
 using Tracker.Models.Enums;
 using Tracker.Models.ViewModels;
 
+
+
 namespace Tracker.Controllers
 {
+    [Authorize]
     public class TaskItemsController : Controller
     {
-        private readonly ApplicationDbContext _context;
 
-        public TaskItemsController(ApplicationDbContext context)
+        private readonly ApplicationDbContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
+
+        public TaskItemsController(
+            ApplicationDbContext context,
+            UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         // GET: TaskItems
         public async Task<IActionResult> Index()
         {
+            var userId = _userManager.GetUserId(User);
+
+            var tasks = await _context.TaskItems
+                .Where(t => t.UserId == userId)
+                .Include(t => t.MainTask)
+                .ToListAsync();
+
             return View(await _context.TaskItems.ToListAsync());
             
         }
@@ -46,6 +63,7 @@ namespace Tracker.Controllers
         public IActionResult Create()
         {
             ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name");
+
             return View();
         }
 
@@ -55,37 +73,39 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime")]
+    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,UserId")]
     Models.TaskItem taskItem)
         {
-            // Always calculate TimeTaken from times
+            var userId = _userManager.GetUserId(User);
+            taskItem.UserId = userId;
+
+            // TimeTaken
             if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
             {
                 taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
-
-                if (taskItem.TimeTaken < TimeSpan.Zero)
-                {
-                    ModelState.AddModelError("", "End time must be after start time.");
-                }
             }
-            if (taskItem.MainTaskId == null || taskItem.MainTaskId == 0)
-            {
-                // 2. Look for an existing "General" MainTask
-                var generalTask = await _context.MainTasks
-                    .FirstOrDefaultAsync(m => m.Name == "General");
 
-                // 3. If it doesn't exist, create it on the fly
+            // Ensure MainTask
+            if (!taskItem.MainTaskId.HasValue || taskItem.MainTaskId == 0)
+            {
+                var generalTask = await _context.MainTasks
+                    .FirstOrDefaultAsync(m => m.Name == "General" && m.UserId == userId);
+
                 if (generalTask == null)
                 {
-                    generalTask = new MainTask { Name = "General", DurationTicks = 0 };
-                    _context.Add(generalTask);
+                    generalTask = new MainTask
+                    {
+                        Name = "General",
+                        UserId = userId,
+                        DurationTicks = 0
+                    };
+
+                    _context.MainTasks.Add(generalTask);
                     await _context.SaveChangesAsync();
                 }
 
-                // 4. Assign the TaskItem to "General"
                 taskItem.MainTaskId = generalTask.Id;
             }
-
             // Reduce MainTask.Duration if task is completed
             if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null && taskItem.TimeTaken.HasValue)
             {
@@ -94,112 +114,107 @@ namespace Tracker.Controllers
                 {
                     mainTask.Duration ??= TimeSpan.Zero;
                     mainTask.Duration -= taskItem.TimeTaken.Value;
-
                     if (mainTask.Duration < TimeSpan.Zero)
                         mainTask.Duration = TimeSpan.Zero;
                 }
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(taskItem);
+                _context.TaskItems.Add(taskItem);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("🔥 SAVE FAILED:");
+                Console.WriteLine(ex.InnerException?.Message ?? ex.Message);
+                throw;
+            }   
 
-            ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name", taskItem.MainTaskId);
-            return View(taskItem);
+            return RedirectToAction(nameof(Index));
         }
 
 
 
 
         // GET: TaskItems/Edit/5
+        // GET: TaskItems/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-           
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
+            var userId = _userManager.GetUserId(User);
+            // Security: Only find the task item if it belongs to a MainTask owned by this user
+            var taskItem = await _context.TaskItems
+                .Include(t => t.MainTask)
+                .FirstOrDefaultAsync(t => t.Id == id && t.MainTask.UserId == userId);
 
-            var taskItem = await _context.TaskItems.FindAsync(id);
-            if (taskItem == null)
-            {
-                return NotFound();
-            }
+            if (taskItem == null) return NotFound();
+
+            // Only show the user's own MainTasks in the dropdown
             ViewBag.MainTaskId = new SelectList(
-               _context.MainTasks,
-                "Id",
-                "Name",
-                taskItem.MainTaskId
-            );
+                _context.MainTasks.Where(m => m.UserId == userId),
+                "Id", "Name", taskItem.MainTaskId);
+
             return View(taskItem);
         }
 
         // POST: TaskItems/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(
-    int id,
-    [Bind("Id,MainTaskId,Title,Description,Status,Priority,StartTime,EndTime")]
-    Models.TaskItem taskItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartTime,EndTime")] Models.TaskItem taskItem)
         {
-            var existingTask = await _context.TaskItems
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == id);
+            taskItem.UserId = _userManager.GetUserId(User);
 
-            if (existingTask == null)
-                return NotFound();
+            if (id != taskItem.Id) return NotFound();
 
-            // Always calculate TimeTaken from times
+            // 1. Manually remove validation for properties NOT in the form
+            ModelState.Remove("MainTask");
+            // If your TaskItem model has a "User" or other linked models, remove them here too:
+            // ModelState.Remove("User");
+
+            // 2. Perform your Time Calculation Logic
             if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
             {
                 taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
-
                 if (taskItem.TimeTaken < TimeSpan.Zero)
                 {
                     ModelState.AddModelError("", "End time must be after start time.");
                 }
             }
-            else
+
+
+            var errors = ModelState.Values.SelectMany(v => v.Errors);
+            foreach (var error in errors)
             {
-                taskItem.TimeTaken = null;
-            }
-
-            // Adjust MainTask.Duration
-            var delta = TimeSpan.Zero;
-
-            if (existingTask.Status == Status.Completed)
-                delta += existingTask.TimeTaken ?? TimeSpan.Zero;
-
-            if (taskItem.Status == Status.Completed)
-                delta -= taskItem.TimeTaken ?? TimeSpan.Zero;
-
-            if (taskItem.MainTaskId != null && delta != TimeSpan.Zero)
-            {
-                var mainTask = await _context.MainTasks.FindAsync(taskItem.MainTaskId);
-                if (mainTask != null)
-                {
-                    mainTask.Duration ??= TimeSpan.Zero;
-                    mainTask.Duration += delta;
-
-                    if (mainTask.Duration < TimeSpan.Zero)
-                        mainTask.Duration = TimeSpan.Zero;
-                }
+                System.Diagnostics.Debug.WriteLine(error.ErrorMessage);
             }
 
             if (ModelState.IsValid)
             {
-                _context.Update(taskItem);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    // Update the record
+                    _context.Update(taskItem);
+
+                    // Handle the Duration logic for the parent MainTask here if needed...
+
+                    await _context.SaveChangesAsync();
+
+                    // Redirect to MainTasks Index so you can see the change immediately
+                    return RedirectToAction("Index", "MainTasks");
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_context.TaskItems.Any(e => e.Id == taskItem.Id)) return NotFound();
+                    else throw;
+                }
             }
 
-            ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name", taskItem.MainTaskId);
+            // If we reach here, validation failed. 
+            // Check 'ModelState' in debugger to see why!
+            var userId = _userManager.GetUserId(User);
+            ViewBag.MainTaskId = new SelectList(_context.MainTasks.Where(m => m.UserId == userId), "Id", "Name", taskItem.MainTaskId);
             return View(taskItem);
         }
 
@@ -249,9 +264,8 @@ namespace Tracker.Controllers
             return _context.TaskItems.Any(e => e.Id == id);
         }
 
-        [HttpPost]
+
         [ValidateAntiForgeryToken]
-        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> UpdateStatus(int id, Status status)
         {
