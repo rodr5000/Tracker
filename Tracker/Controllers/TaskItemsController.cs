@@ -38,25 +38,30 @@ namespace Tracker.Controllers
             var userId = _userManager.GetUserId(User);
 
             var tasks = await _context.TaskItems
-                .Where(t => t.UserId == userId)
                 .Include(t => t.MainTask)
+                .Where(t => t.UserId == userId)
                 .ToListAsync();
 
-            return View(await _context.TaskItems.ToListAsync());
-            
+            return View(tasks);
+
+
         }
 
         // GET: TaskItems/Details/5
         public async Task<IActionResult> Details(int? id)
         {
 
-            var taskItem = await _context.TaskItems.Include(t => t.MainTask).FirstOrDefaultAsync(m => m.Id == id);
-            if (taskItem == null)
+            var userId = _userManager.GetUserId(User);
+
+            var task = await _context.TaskItems
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
+            if (task == null)
             {
-                return NotFound();
+                return NotFound(); // or Forbid()
             }
-            
-            return View(taskItem);
+
+            return View(task);
         }
 
         // GET: TaskItems/Create
@@ -229,14 +234,17 @@ namespace Tracker.Controllers
                 return NotFound();
             }
 
-            var taskItem = await _context.TaskItems
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (taskItem == null)
+            var userId = _userManager.GetUserId(User);
+
+            var task = await _context.TaskItems
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
+            if (task == null)
             {
-                return NotFound();
+                return NotFound(); // or Forbid()
             }
 
-            return View(taskItem);
+            return View(task);
         }
 
         // POST: TaskItems/Delete/5

@@ -29,16 +29,13 @@ namespace Tracker.Controllers
         // GET: MainTasks
         public async Task<IActionResult> Index()
         {
-            // Get the current user ID
             var userId = _userManager.GetUserId(User);
 
-            // .Include is the magic that fills the item.TaskItems list
-            var tasks = await _context.MainTasks
-                .Include(m => m.TaskItems)
+            var mainTasks = await _context.MainTasks
                 .Where(m => m.UserId == userId)
                 .ToListAsync();
 
-            return View(tasks);
+            return View(mainTasks);
         }
 
         // GET: MainTasks/Details/5
