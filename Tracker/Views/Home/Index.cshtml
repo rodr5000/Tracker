@@ -1,8 +1,49 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+
+    <div class="text-center mb-5">
+        <h1 class="display-4">ManageIt</h1>
+        <p class="lead">Manage your tasks, track your time, and stay productive.</p>
+    </div>
+
+    <div class="row g-4">
+        @if (User.Identity.IsAuthenticated)
+        {
+            <h5>Hello @User.Identity.Name 👋</h5>
+        }
+
+
+        <div class="col-md-3">
+            <a asp-controller="TaskItems" asp-action="Index" class="dashboard-card">
+                <h4>My Tasks</h4>
+                <p>View and manage all tasks</p>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="MainTasks" asp-action="Index" class="dashboard-card">
+                <h4>Main Tasks</h4>
+                <p>Manage categories</p>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="TaskItems" asp-action="Calendar" class="dashboard-card">
+                <h4>Calendar</h4>
+                <p>Schedule tasks visually</p>
+            </a>
+        </div>
+
+        <div class="col-md-3">
+            <a asp-controller="TaskItems" asp-action="Report" class="dashboard-card">
+                <h4>Reports</h4>
+                <p>See productivity stats</p>
+            </a>
+        </div>
+
+    </div>
 </div>
+
