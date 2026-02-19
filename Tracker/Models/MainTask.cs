@@ -14,7 +14,8 @@ namespace Tracker.Models
         public string UserId { get; set; }
 
         [ValidateNever]
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
+
         public string Description { get; set; } = string.Empty;
 
         //public TimeSpan? Duration { get; set; }

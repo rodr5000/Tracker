@@ -1,0 +1,42 @@
+﻿@model IEnumerable<dynamic>
+
+<div class="container mt-4">
+    <h2>🎯 What Should You Focus On Today?</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success mt-3">
+            🎉 No active tasks! Enjoy your day.
+        </div>
+    }
+    else
+    {
+        var topTask = Model.First();
+
+        <div class="card mt-4 shadow-lg border-danger">
+            <div class="card-body">
+                <h4 class="text-danger">🔥 Main Focus</h4>
+                <h5>@topTask.Task.Title</h5>
+                <p>Priority: <strong>@topTask.Task.Priority</strong></p>
+                <p>Status: <strong>@topTask.Task.Status</strong></p>
+                <p>Due: @topTask.Task.EndTime?.ToString("dd MMM yyyy")</p>
+            </div>
+        </div>
+
+        <hr />
+
+        <h5 class="mt-4">Other Important Tasks</h5>
+
+        @foreach (var item in Model.Skip(1).Take(3))
+        {
+            <div class="card mt-2 shadow-sm">
+                <div class="card-body">
+                    <strong>@item.Task.Title</strong>
+                    <span class="badge bg-secondary ms-2">
+                        @item.Task.Priority
+                    </span>
+                </div>
+            </div>
+        }
+    }
+</div>

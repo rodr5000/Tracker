@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Tracker.Data;
 
@@ -11,9 +12,11 @@ using Tracker.Data;
 namespace Tracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260219080327_EstimatedTime")]
+    partial class EstimatedTime
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -279,9 +282,6 @@ namespace Tracker.Migrations
                     b.Property<long?>("EstimatedTimeTicks")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("IsWorking")
-                        .HasColumnType("bit");
-
                     b.Property<int?>("MainTaskId")
                         .HasColumnType("int");
 
@@ -305,9 +305,6 @@ namespace Tracker.Migrations
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("WorkStartTime")
-                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 

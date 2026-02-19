@@ -43,19 +43,22 @@
                 <span asp-validation-for="Priority" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="StartTime" class="control-label"></label>
-                <input asp-for="StartTime" type="datetime-local" class="form-control" />
-                <span asp-validation-for="StartTime" class="text-danger"></span>
+                <label asp-for="StartDate" class="control-label"></label>
+                <input asp-for="StartDate" type="datetime-local" class="form-control" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="EndTime" class="control-label"></label>
-                <input asp-for="EndTime" type="datetime-local" class="form-control" />
-                <span asp-validation-for="EndTime" class="text-danger"></span>
+                <label asp-for="DueDate" class="control-label"></label>
+                <input asp-for="DueDate" type="datetime-local" class="form-control" />
+                <span asp-validation-for="DueDate" class="text-danger"></span>
             </div>
+            <label>Estimated Time (hours)</label>
+            <input type="number" step="0.25" min="0" name="HoursWorked" class="form-control" />
 
             <div class="form-group">
                 <input type="submit" value="Create" class="expand-btn primary" />
             </div>
+
         </form>
     </div>
 </div>

@@ -16,7 +16,7 @@ namespace Tracker.Models
         public string UserId { get; set; }
 
         [ValidateNever]
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
         public int? MainTaskId { get; set; }
         [ValidateNever]
         public MainTask? MainTask { get; set; } 
@@ -32,10 +32,23 @@ namespace Tracker.Models
 
         public long? TimeTakenTicks { get; set; }
 
+        public long? EstimatedTimeTicks { get; set; }
+
         [NotMapped]
         public TimeSpan? TimeTaken
         {
-            get => TimeTakenTicks.HasValue ? TimeSpan.FromTicks(TimeTakenTicks.Value) : null;
+            get => TimeTakenTicks.HasValue
+                ? TimeSpan.FromTicks(TimeTakenTicks.Value)
+                : null;
+            set => TimeTakenTicks = value?.Ticks;
+        }
+
+        [NotMapped]
+        public TimeSpan? EstimatedTime
+        {
+            get => TimeTakenTicks.HasValue
+                ? TimeSpan.FromTicks(TimeTakenTicks.Value)
+                : null;
             set => TimeTakenTicks = value?.Ticks;
         }
 
@@ -45,10 +58,25 @@ namespace Tracker.Models
         [Required]
         public Priority Priority { get; set; } = Priority.Medium;
 
-        public DateTime? StartTime { get; set; } = DateTime.Now;
-        public DateTime? EndTime { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? DueDate { get; set; }
 
-        
+        public DateTime? WorkStartTime { get; set; }
+        public bool IsWorking { get; set; } = false;
+
+        [NotMapped]
+        public double ProgressPercentage
+        {
+            get
+            {
+                if (!EstimatedTime.HasValue || EstimatedTime.Value.TotalSeconds == 0)
+                    return 0;
+
+                return Math.Min(100,
+                    (TimeTaken?.TotalSeconds ?? 0) /
+                    EstimatedTime.Value.TotalSeconds * 100);
+            }
+        }
 
         // Navigation
         //public ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();

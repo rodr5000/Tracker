@@ -31,6 +31,30 @@
 
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
+                        <div class="mt-2">
+
+                            @if (task.IsWorking)
+                            {
+                                <form asp-action="StopWork" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@task.Id" />
+                                    <button class="btn btn-danger btn-sm">
+                                        ⏹ Stop
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="StartWork" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@task.Id" />
+                                    <button class="btn btn-success btn-sm">
+                                        ▶ Start
+                                    </button>
+                                </form>
+                            }
+
+                        </div>
 
 
 
@@ -73,10 +97,10 @@
                         </form>
                     </div>
                 </div>
-                @if (task.EndTime.HasValue)
+                @if (task.DueDate.HasValue)
                 {
                     <div class="small mt-2 text-end text-muted">
-                        Due: @task.EndTime.Value.ToString("dd MMM yyyy")
+                        Due: @task.DueDate.Value.ToString("dd MMM yyyy")
                     </div>
                 }
                 @if (task.TimeTaken.HasValue)
@@ -91,6 +115,27 @@
                         Time taken: --
                     </span>
                 }
+                @if (task.EstimatedTime.HasValue)
+                {
+                    <div class="mt-2">
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar"
+                                 role="progressbar"
+                                 style="width: @task.ProgressPercentage%"
+                                 aria-valuenow="@task.ProgressPercentage"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            @task.TimeTaken?.ToString(@"hh\:mm") /
+                            @task.EstimatedTime?.ToString(@"hh\:mm")
+                            (@Math.Round(task.ProgressPercentage)%)
+                        </div>
+                    </div>
+                }
+
             </div>
         }
     </div>

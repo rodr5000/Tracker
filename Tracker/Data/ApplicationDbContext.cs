@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Composition;
+using System.Reflection.Emit;
 using System.Security.Claims;
 using Tracker.Models;
 namespace Tracker.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public DbSet<MainTask> MainTasks { get; set; }
         public DbSet<TaskItem> TaskItems { get; set; }
@@ -33,7 +35,28 @@ namespace Tracker.Data
 
             builder.Entity<MainTask>()
                 .HasQueryFilter(m => m.UserId == CurrentUserId);
+
+            builder.Entity<MainTask>()
+                .HasOne(m => m.User)
+                .WithMany(u => u.MainTasks)
+                .HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TaskItem>()
+                .HasOne(t => t.User)
+                .WithMany(u => u.TaskItems)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<TaskItem>()
+                .HasOne(t => t.MainTask)
+                .WithMany(m => m.TaskItems)
+                .HasForeignKey(t => t.MainTaskId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
+
+
 
     }
 }

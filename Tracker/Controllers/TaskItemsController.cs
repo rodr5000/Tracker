@@ -22,11 +22,11 @@ namespace Tracker.Controllers
     {
 
         private readonly ApplicationDbContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public TaskItemsController(
             ApplicationDbContext context,
-            UserManager<IdentityUser> userManager)
+            UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
@@ -73,16 +73,39 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartTime,EndTime,UserId")]
+    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,UserId")]
     Models.TaskItem taskItem)
         {
             var userId = _userManager.GetUserId(User);
             taskItem.UserId = userId;
 
-            // TimeTaken
-            if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
+            //time check
+            if (taskItem.StartDate.HasValue && taskItem.DueDate.HasValue)
             {
-                taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
+                if (taskItem.StartDate >= taskItem.DueDate)
+                {
+                    ModelState.AddModelError("",
+                        "End time must be after start time.");
+                }
+
+                var maxDuration = TimeSpan.FromDays(7); 
+                if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
+                {
+                    ModelState.AddModelError("",
+                        "Task duration cannot be longer than 30 days.");
+                }
+
+            }
+            var errors = ModelState.Values.SelectMany(v => v.Errors);
+            foreach (var error in errors)
+            {
+                System.Diagnostics.Debug.WriteLine(error.ErrorMessage);
+            }
+
+            if (Request.Form["EstimatedTime"].Count > 0)
+            {
+                double hours = double.Parse(Request.Form["EstimatedTime"]);
+                taskItem.EstimatedTime = TimeSpan.FromHours(hours);
             }
 
             // Ensure MainTask
@@ -162,7 +185,7 @@ namespace Tracker.Controllers
         // POST: TaskItems/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartTime,EndTime")] Models.TaskItem taskItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartDate,DueDate")] Models.TaskItem taskItem)
         {
             taskItem.UserId = _userManager.GetUserId(User);
 
@@ -173,22 +196,37 @@ namespace Tracker.Controllers
             // If your TaskItem model has a "User" or other linked models, remove them here too:
             // ModelState.Remove("User");
 
-            // 2. Perform your Time Calculation Logic
-            if (taskItem.StartTime.HasValue && taskItem.EndTime.HasValue)
+            //time check
+            if (taskItem.StartDate.HasValue && taskItem.DueDate.HasValue)
             {
-                taskItem.TimeTaken = taskItem.EndTime.Value - taskItem.StartTime.Value;
-                if (taskItem.TimeTaken < TimeSpan.Zero)
+                if (taskItem.StartDate >= taskItem.DueDate)
                 {
-                    ModelState.AddModelError("", "End time must be after start time.");
+                    ModelState.AddModelError("",
+                        "End time must be after start time.");
                 }
+
+                var maxDuration = TimeSpan.FromDays(7);
+                if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
+                {
+                    ModelState.AddModelError("",
+                        "Task duration cannot be longer than 30 days.");
+                }
+
             }
-
-
             var errors = ModelState.Values.SelectMany(v => v.Errors);
             foreach (var error in errors)
             {
                 System.Diagnostics.Debug.WriteLine(error.ErrorMessage);
             }
+
+            if (Request.Form["EstimatedTime"].Count > 0)
+            {
+                double hours = double.Parse(Request.Form["EstimatedTime"]);
+                taskItem.EstimatedTime = TimeSpan.FromHours(hours);
+            }
+
+
+
 
             if (ModelState.IsValid)
             {
@@ -317,8 +355,8 @@ namespace Tracker.Controllers
                 CancelledCount = tasks.Count(t => t.Status == Status.Cancelled),
 
                 OverdueCount = tasks.Count(t =>
-                    t.EndTime.HasValue &&
-                    t.EndTime.Value < now &&
+                    t.DueDate.HasValue &&
+                    t.DueDate.Value < now &&
                     t.Status != Status.Completed
                 )
             };
@@ -335,13 +373,13 @@ namespace Tracker.Controllers
         public IActionResult GetCalendarEvents()
         {
             var tasks = _context.TaskItems
-                .Where(t => t.StartTime != null && t.EndTime != null)
+                .Where(t => t.StartDate != null && t.DueDate != null)
                 .Select(t => new
                 {
                     id = t.Id,
                     title = t.Title,
-                    start = t.StartTime,
-                    end = t.EndTime,
+                    start = t.StartDate,
+                    end = t.DueDate,
                     backgroundColor = t.Status == Status.Completed ? "#4CAF50" :
                                       t.Status == Status.InProgress ? "#2196F3" :
                                       "#FFC107"
@@ -357,9 +395,9 @@ namespace Tracker.Controllers
             var task = await _context.TaskItems.FindAsync(dto.Id);
             if (task == null) return NotFound();
 
-            task.StartTime = dto.StartTime;
-            task.EndTime = dto.EndTime;
-            task.TimeTaken = dto.EndTime - dto.StartTime;
+            task.StartDate = dto.StartDate;
+            task.DueDate = dto.DueDate;
+            task.TimeTaken = dto.DueDate - dto.DueDate;
 
             await _context.SaveChangesAsync();
             return Ok();
@@ -369,9 +407,122 @@ namespace Tracker.Controllers
         public class UpdateTimeDto
         {
             public int Id { get; set; }
-            public DateTime StartTime { get; set; }
-            public DateTime EndTime { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime DueDate { get; set; }
         }
+
+
+        private int CalculateFocusScore(Models.TaskItem task, DateTime today)
+        {
+            int score = 0;
+
+            // 1️⃣ Priority
+            score += task.Priority switch
+            {
+                Priority.High => 50,
+                Priority.Medium => 30,
+                Priority.Low => 10,
+                _ => 0
+            };
+
+            // 2️⃣ Due date logic
+            if (task.DueDate.HasValue)
+            {
+                var daysLeft = (task.DueDate.Value.Date - today).Days;
+
+                if (daysLeft < 0) // overdue
+                    score += 100;
+
+                else if (daysLeft <= 1)
+                    score += 60;
+
+                else if (daysLeft <= 3)
+                    score += 30;
+
+                else if (daysLeft <= 7)
+                    score += 10;
+            }
+
+            // 3️⃣ If task starts today
+            if (task.StartDate.HasValue &&
+                task.StartDate.Value.Date == today)
+            {
+                score += 20;
+            }
+
+            return score;
+        }
+
+
+        public async Task<IActionResult> FocusToday()
+        {
+            var today = DateTime.Today;
+
+            var tasks = await _context.TaskItems
+                .Where(t => t.Status != Status.Completed &&
+                            t.Status != Status.Cancelled)
+                .ToListAsync();
+
+            var scoredTasks = tasks
+                .Select(t => new
+                {
+                    Task = t,
+                    Score = CalculateFocusScore(t, today)
+                })
+                .OrderByDescending(t => t.Score)
+                .ToList();
+
+            return View(scoredTasks);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartWork(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            var task = await _context.TaskItems
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
+            if (task == null) return NotFound();
+
+            if (!task.IsWorking)
+            {
+                task.WorkStartTime = DateTime.Now;
+                task.IsWorking = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StopWork(int id)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            var task = await _context.TaskItems
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
+            if (task == null) return NotFound();
+
+            if (task.IsWorking && task.WorkStartTime.HasValue)
+            {
+                var sessionTime = DateTime.Now - task.WorkStartTime.Value;
+
+                task.TimeTaken ??= TimeSpan.Zero;
+                task.TimeTaken += sessionTime;
+
+                task.WorkStartTime = null;
+                task.IsWorking = false;
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
 
 
 
