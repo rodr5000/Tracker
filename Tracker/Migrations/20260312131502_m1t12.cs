@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Tracker.Migrations
 {
     /// <inheritdoc />
-    public partial class m18t4 : Migration
+    public partial class m1t12 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -191,10 +191,13 @@ namespace Tracker.Migrations
                     Title = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     TimeTakenTicks = table.Column<long>(type: "bigint", nullable: true),
+                    EstimatedTimeTicks = table.Column<long>(type: "bigint", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
                     Priority = table.Column<int>(type: "int", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EndTime = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    WorkStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsWorking = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

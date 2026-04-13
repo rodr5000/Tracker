@@ -12,8 +12,8 @@ using Tracker.Data;
 namespace Tracker.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260219080710_AddWorkTracking")]
-    partial class AddWorkTracking
+    [Migration("20260312131502_m1t12")]
+    partial class m1t12
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

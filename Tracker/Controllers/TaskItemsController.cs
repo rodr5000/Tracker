@@ -12,6 +12,7 @@ using Tracker.Data;
 using Tracker.Models;
 using Tracker.Models.Enums;
 using Tracker.Models.ViewModels;
+using static System.Net.Mime.MediaTypeNames;
 
 
 
@@ -88,7 +89,7 @@ namespace Tracker.Controllers
                         "End time must be after start time.");
                 }
 
-                var maxDuration = TimeSpan.FromDays(7); 
+                var maxDuration = TimeSpan.FromDays(14); 
                 if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
                 {
                     ModelState.AddModelError("",
@@ -376,19 +377,54 @@ namespace Tracker.Controllers
                 .Where(t => t.StartDate != null && t.DueDate != null)
                 .Select(t => new
                 {
-                    id = t.Id,
-                    title = t.Title,
-                    start = t.StartDate,
-                    end = t.DueDate,
-                    backgroundColor = t.Status == Status.Completed ? "#4CAF50" :
-                                      t.Status == Status.InProgress ? "#2196F3" :
-                                      "#FFC107"
-               })
+                    t.Id,
+                    t.Title,
+                    t.StartDate,
+                    t.DueDate ,
+                    t.Priority,
+                    t.Status
+                    
+                })
                 .ToList();
 
-            return Json(tasks);
+            var events = tasks.SelectMany(t => new[]
+            {
+        new {
+            id = t.Id + "_start",
+            taskId = t.Id,
+            title = (t.Status == Status.Completed ? "✔ bg-text " :
+                  t.Status == Status.Cancelled ? "❌ bg-text " :
+                  "⏳ bg-text " )
+                  + t.Title,
+            start = t.StartDate,
+
+              className = t.Status == Status.Completed ? "bg-low" :
+                      t.Status == Status.Cancelled ? "bg-high" :
+                      t.Priority == Priority.Critical ? "bg-high":
+                      t.Priority == Priority.High ? "bg-high" :
+                      "bg-medium"
+        },
+        new {
+            id = t.Id + "_due",
+            taskId = t.Id,
+            title = (t.Status == Status.Completed ? "✔ " :
+                  t.Status == Status.Cancelled ? "❌  " :
+                  "⏳ ")
+                  + t.Title,
+            start = t.DueDate,
+            className = t.Status == Status.Completed ? "bg-low" :
+                      t.Status == Status.Cancelled ? "bg-high" :
+                      t.Priority == Priority.Critical ? "bg-high":
+                      t.Priority == Priority.High ? "bg-high" :
+                      "bg-medium"
+        }
+    });
+
+            return Json(events); 
         }
 
+
+        
         [HttpPost]
         public async Task<IActionResult> UpdateTime([FromBody] UpdateTimeDto dto)
         {

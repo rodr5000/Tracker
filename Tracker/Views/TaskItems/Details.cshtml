@@ -24,12 +24,18 @@
     <dt class="col-sm-3">Priority</dt>
     <dd class="col-sm-9">@Model.Priority</dd>
 
-    <dt class="col-sm-3">Start Time</dt>
+    <dt class="col-sm-3">Start Date</dt>
     <dd class="col-sm-9">@Model.StartDate</dd>
 
-    <dt class="col-sm-3">End Time</dt>
+    <dt class="col-sm-3">Due Date</dt>
     <dd class="col-sm-9">@Model.DueDate</dd>
 
+     @if (Model.EstimatedTime.HasValue)
+    {
+        <div class="small text-muted">
+            Estimated Time: @Model.EstimatedTime.Value.ToString(@"hh\:mm\:ss")
+        </div>
+    }
     @if (Model.TimeTaken.HasValue)
     {
         <div class="small text-muted">

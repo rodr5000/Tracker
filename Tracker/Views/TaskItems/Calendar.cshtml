@@ -9,27 +9,27 @@
                document.addEventListener('DOMContentLoaded', function () {
             var calendarEl = document.getElementById('calendar');
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                slotMinTime: "06:00:00",
-                slotMaxTime: "22:00:00",
-                nowIndicator: true,
-                editable: true,
-                selectable: true,
-                height: "auto",
-                timeZone: 'local',
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            height: "auto",
+            selectable: true,
+            editable: true,
+            eventDisplay: 'block',
+            displayEventTime: false,
+            dayMaxEvents: true,
+            
 
-                events: '/TaskItems/GetCalendarEvents',
+            events: '/TaskItems/GetCalendarEvents',
 
-                select: function (info) {
-                    // Create new task by selecting time
-                    window.location.href =
-                        `/TaskItems/Create?start=${info.startStr}&end=${info.endStr}`;
-                },
+            select: function (info) {
+                window.location.href =
+                    `/TaskItems/Create?start=${info.startStr}&end=${info.endStr}`;
+            },
 
-                eventClick: function (info) {
-                    window.location.href = `/TaskItems/Edit/${info.event.id}`;
-                },
+           eventClick: function (info) {
+               const realId = info.event.extendedProps.taskId; // ✅
+               window.location.href = `/TaskItems/Edit/${realId}`;
+        },
 
                 eventDrop: function (info) {
                     updateTaskTime(info.event);
@@ -37,7 +37,17 @@
 
                 eventResize: function (info) {
                     updateTaskTime(info.event);
-                }
+                },
+
+           eventDidMount: function(info) {
+            const tooltip = `
+                <strong>${info.event.title}</strong><br/>
+                Status: ${info.event.extendedProps.status || ''}<br/>
+                Priority: ${info.event.extendedProps.priority || ''}
+            `;
+
+            info.el.setAttribute("title", tooltip);
+        }
             });
 
             calendar.render();
