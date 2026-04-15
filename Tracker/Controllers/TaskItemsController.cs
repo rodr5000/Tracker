@@ -74,7 +74,7 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,UserId")]
+    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,EstimatedTime,UserId")]
     Models.TaskItem taskItem)
         {
             var userId = _userManager.GetUserId(User);
@@ -89,7 +89,7 @@ namespace Tracker.Controllers
                         "End time must be after start time.");
                 }
 
-                var maxDuration = TimeSpan.FromDays(14); 
+                var maxDuration = TimeSpan.FromDays(30); 
                 if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
                 {
                     ModelState.AddModelError("",
@@ -180,6 +180,8 @@ namespace Tracker.Controllers
                 _context.MainTasks.Where(m => m.UserId == userId),
                 "Id", "Name", taskItem.MainTaskId);
 
+            Console.WriteLine("EstimatedTime raw: " + Request.Form["EstimatedTime"]);
+
             return View(taskItem);
         }
 
@@ -206,7 +208,7 @@ namespace Tracker.Controllers
                         "End time must be after start time.");
                 }
 
-                var maxDuration = TimeSpan.FromDays(7);
+                var maxDuration = TimeSpan.FromDays(30);
                 if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
                 {
                     ModelState.AddModelError("",
@@ -452,38 +454,62 @@ namespace Tracker.Controllers
         {
             int score = 0;
 
-            // 1️⃣ Priority
+            // 🔥 1️⃣ Priority
             score += task.Priority switch
             {
-                Priority.High => 50,
-                Priority.Medium => 30,
-                Priority.Low => 10,
+                Priority.Critical => 80,
+                Priority.High => 60,
+                Priority.Medium => 40,
+                Priority.Low => 20,
                 _ => 0
             };
 
-            // 2️⃣ Due date logic
+            // ⏳ 2️⃣ Due date urgency
             if (task.DueDate.HasValue)
             {
                 var daysLeft = (task.DueDate.Value.Date - today).Days;
 
-                if (daysLeft < 0) // overdue
-                    score += 100;
-
-                else if (daysLeft <= 1)
-                    score += 60;
-
-                else if (daysLeft <= 3)
-                    score += 30;
-
-                else if (daysLeft <= 7)
-                    score += 10;
+                if (daysLeft < 0)
+                    score += 120; // 🚨 overdue
+                else if (daysLeft == 0)
+                    score += 80;  // today
+                else if (daysLeft <= 2)
+                    score += 50;
+                else if (daysLeft <= 5)
+                    score += 25;
             }
 
-            // 3️⃣ If task starts today
-            if (task.StartDate.HasValue &&
-                task.StartDate.Value.Date == today)
+            // 🚀 3️⃣ Started but not finished
+            if (task.TimeTaken.HasValue && task.TimeTaken > TimeSpan.Zero)
             {
                 score += 20;
+            }
+
+            // 🧠 4️⃣ Estimated vs Actual (VERY IMPORTANT)
+            if (task.EstimatedTime.HasValue)
+            {
+                var estimated = task.EstimatedTime.Value;
+                var actual = task.TimeTaken ?? TimeSpan.Zero;
+
+                if (actual > estimated)
+                {
+                    score += 100; // 🔥 you're behind
+                }
+                else
+                {
+                    var progress = actual.TotalSeconds / estimated.TotalSeconds;
+
+                    if (progress > 0.7)
+                        score += 40; // almost done → finish it
+                    else if (progress > 0.3)
+                        score += 20;
+                }
+            }
+
+            // 📅 5️⃣ Starts today
+            if (task.StartDate.HasValue && task.StartDate.Value.Date == today)
+            {
+                score += 30;
             }
 
             return score;
@@ -566,3 +592,4 @@ namespace Tracker.Controllers
 
     }
 }
+

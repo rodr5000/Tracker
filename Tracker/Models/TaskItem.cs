@@ -46,10 +46,10 @@ namespace Tracker.Models
         [NotMapped]
         public TimeSpan? EstimatedTime
         {
-            get => TimeTakenTicks.HasValue
-                ? TimeSpan.FromTicks(TimeTakenTicks.Value)
+            get => EstimatedTimeTicks.HasValue
+                ? TimeSpan.FromTicks(EstimatedTimeTicks.Value)
                 : null;
-            set => TimeTakenTicks = value?.Ticks;
+            set => EstimatedTimeTicks = value?.Ticks;
         }
 
         [Required]

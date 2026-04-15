@@ -16,10 +16,42 @@
         <div class="card mt-4 shadow-lg border-danger">
             <div class="card-body">
                 <h4 class="text-danger">🔥 Main Focus</h4>
+
                 <h5>@topTask.Task.Title</h5>
+
                 <p>Priority: <strong>@topTask.Task.Priority</strong></p>
                 <p>Status: <strong>@topTask.Task.Status</strong></p>
-                <p>Due: @topTask.Task.EndTime?.ToString("dd MMM yyyy")</p>
+
+                <p>Due: @topTask.Task.DueDate?.ToString("dd MMM yyyy")</p>
+
+                <p>
+                    ⏱ Estimated: @topTask.Task.EstimatedTime?.ToString(@"hh\:mm")
+                    <br />
+                    ✅ Actual: @topTask.Task.TimeTaken?.ToString(@"hh\:mm")
+                </p>
+                @{
+                    var isOverdue = topTask.Task.DueDate < DateTime.Now;
+                    var isLate = topTask.Task.TimeTaken > topTask.Task.EstimatedTime;
+                }
+                @if (isOverdue)
+                {
+                    <span class="badge bg-danger">⚠️ Overdue</span>
+                }
+                else if (isLate)
+                {
+                    <span class="badge bg-warning text-dark">⏳ Over time</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">On track</span>
+                }
+
+                <div class="progress mt-2">
+                    <div class="progress-bar bg-success"
+                         style="width:@topTask.Task.ProgressPercentage%">
+                        @topTask.Task.ProgressPercentage.ToString("0")%
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -27,16 +59,25 @@
 
         <h5 class="mt-4">Other Important Tasks</h5>
 
-        @foreach (var item in Model.Skip(1).Take(3))
-        {
-            <div class="card mt-2 shadow-sm">
-                <div class="card-body">
-                    <strong>@item.Task.Title</strong>
-                    <span class="badge bg-secondary ms-2">
-                        @item.Task.Priority
-                    </span>
+@foreach (var item in Model.Skip(1).Take(3))
+{
+    <div class="card mt-2 shadow-sm">
+        <div class="card-body d-flex justify-content-between">
+            <div>
+                <strong>@item.Task.Title</strong>
+                <div class="small text-muted">
+                    @item.Task.EstimatedTime?.ToString(@"hh\:mm")
                 </div>
             </div>
-        }
+
+            <span class="badge bg-secondary">
+                @item.Task.Priority
+            </span>
+        </div>
+    </div>
+}
+        
+        
     }
+
 </div>

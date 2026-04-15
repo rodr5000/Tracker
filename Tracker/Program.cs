@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
@@ -11,10 +11,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<ApplicationUser>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders()
+    .AddDefaultUI();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
@@ -30,6 +34,53 @@ else
     app.UseHsts();
 }
 
+
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+    Console.WriteLine("\"========== SEEDING ==========\"");
+
+    // 1️⃣ יצירת Role
+    if (!await roleManager.RoleExistsAsync("Admin"))
+    {
+        var result = await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+        if (result.Succeeded)
+            Console.WriteLine("✅ Admin role created");
+        else
+        {
+            Console.WriteLine("❌ Failed to create role:");
+            foreach (var error in result.Errors)
+                Console.WriteLine(error.Description);
+        }
+    }
+
+    // 2️⃣ בדיקת משתמש
+    var user = await userManager.FindByEmailAsync("admin@email.com");
+
+    if (user == null)
+    {
+        Console.WriteLine("❌ Admin user not found----------------------------------");
+    }
+    else
+    {
+        Console.WriteLine("✅ Admin user found");
+
+        if (!await userManager.IsInRoleAsync(user, "Admin"))
+        {
+            await userManager.AddToRoleAsync(user, "Admin");
+            Console.WriteLine("✅ Role assigned-----------------------------------------");
+        }
+    }
+}
+
+
 app.UseHttpsRedirection();
 app.UseRouting();
 
@@ -42,7 +93,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
 app.MapRazorPages()
    .WithStaticAssets();
 
