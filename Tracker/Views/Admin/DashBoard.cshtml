@@ -1,0 +1,77 @@
+﻿@model Tracker.Models.ViewModels.AdminDashboardViewModel
+
+<div class="container mt-4">
+    <h2>📊 Admin Dashboard</h2>
+
+    <div class="row mt-4">
+
+        <div class="col-md-3">
+            <div class="card shadow text-center p-3">
+                <h5>Users</h5>
+                <h2>@Model.TotalUsers</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow text-center p-3">
+                <h5>Total Tasks</h5>
+                <h2>@Model.TotalTasks</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow text-center p-3">
+                <h5>Completed</h5>
+                <h2 class="text-success">@Model.CompletedTasks</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow text-center p-3">
+                <h5>Overdue</h5>
+                <h2 class="text-danger">@Model.OverdueTasks</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row mt-4">
+
+        <div class="col-md-4">
+            <div class="card shadow p-3">
+                <h5>⏳ In Progress</h5>
+                <h3>@Model.InProgressTasks</h3>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow p-3">
+                <h5>🕒 Pending</h5>
+                <h3>@Model.PendingTasks</h3>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow p-3">
+                <h5>⏱ Total Hours</h5>
+                <h3>@Model.TotalHoursWorked.ToString("0.0")</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card mt-4 shadow p-3">
+        <h5>👥 Tasks per User</h5>
+
+        <ul class="list-group mt-3">
+            @foreach (var item in Model.TasksPerUser)
+            {
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>👤 @item.Key</span>
+                    <span class="badge bg-primary">@item.Value</span>
+                </li>
+            }
+        </ul>
+    </div>
+
+</div>

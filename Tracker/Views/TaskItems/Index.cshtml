@@ -38,7 +38,7 @@
                                 <form asp-action="StopWork" method="post" style="display:inline;">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@task.Id" />
-                                    <button class="btn btn-danger btn-sm">
+                                    <button class="expand-btn danger">
                                         ⏹ Stop
                                     </button>
                                 </form>
@@ -48,7 +48,7 @@
                                 <form asp-action="StartWork" method="post" style="display:inline;">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@task.Id" />
-                                    <button class="btn btn-success btn-sm">
+                                    <button class="expand-btn success">
                                         ▶ Start
                                     </button>
                                 </form>

@@ -1,55 +1,130 @@
 ﻿@model Tracker.Models.TaskItem
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Task Details";
 }
 
-<h1>Details</h1>
+<div class="container mt-4">
 
-<h2>Task Details</h2>
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body">
 
-<dl class="row">
-    <dt class="col-sm-3">Main Task</dt>
-    <dd class="col-sm-9">@Model.MainTask?.Name</dd>
+            <!-- 🔥 Header -->
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="fw-bold">@Model.Title</h3>
+                    <div class="text-muted small">
+                        Main Task: <strong>@Model.MainTask?.Name ?? "General"</strong>
+                    </div>
+                </div>
 
-    <dt class="col-sm-3">Title</dt>
-    <dd class="col-sm-9">@Model.Title</dd>
+                <!-- Status badge -->
+                <span class="badge
+                    @(Model.Status == Tracker.Models.Enums.Status.Completed ? "bg-success" :
+                                            Model.Status == Tracker.Models.Enums.Status.InProgress ? "bg-primary" :
+                                            Model.Status == Tracker.Models.Enums.Status.Cancelled ? "bg-danger" :
+                                            "bg-secondary")">
+                    @Model.Status
+                </span>
+            </div>
 
-    <dt class="col-sm-3">Description</dt>
-    <dd class="col-sm-9">@Model.Description</dd>
+            <hr />
 
-    <dt class="col-sm-3">Status</dt>
-    <dd class="col-sm-9">@Model.Status</dd>
+            <!-- 📝 Description -->
+            <p class="text-muted">
+                @(string.IsNullOrWhiteSpace(Model.Description)
+                                ? "No description provided."
+                                : Model.Description)
+            </p>
 
-    <dt class="col-sm-3">Priority</dt>
-    <dd class="col-sm-9">@Model.Priority</dd>
+            <!-- 📊 Info Grid -->
+            <div class="row mt-3">
 
-    <dt class="col-sm-3">Start Date</dt>
-    <dd class="col-sm-9">@Model.StartDate</dd>
+                <div class="col-md-4">
+                    <div class="small text-muted">Priority</div>
+                    <span class="badge
+                        @(Model.Priority == Tracker.Models.Enums.Priority.High ? "bg-danger" :
+                                                    Model.Priority == Tracker.Models.Enums.Priority.Medium ? "bg-warning text-dark" :
+                                                    "bg-secondary")">
+                        @Model.Priority
+                    </span>
+                </div>
 
-    <dt class="col-sm-3">Due Date</dt>
-    <dd class="col-sm-9">@Model.DueDate</dd>
+                <div class="col-md-4">
+                    <div class="small text-muted">Start Date</div>
+                    <div>@Model.StartDate?.ToString("dd MMM yyyy") ?? "—"</div>
+                </div>
 
-     @if (Model.EstimatedTime.HasValue)
-    {
-        <div class="small text-muted">
-            Estimated Time: @Model.EstimatedTime.Value.ToString(@"hh\:mm\:ss")
+                <div class="col-md-4">
+                    <div class="small text-muted">Due Date</div>
+                    <div>@Model.DueDate?.ToString("dd MMM yyyy") ?? "—"</div>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <!-- ⏱ Time Section -->
+            <div class="row">
+
+                <div class="col-md-4">
+                    <div class="small text-muted">Estimated Time</div>
+                    <div>
+                        @(Model.EstimatedTime?.ToString(@"hh\:mm") ?? "—")
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="small text-muted">Time Taken</div>
+                    <div>
+                        @(Model.TimeTaken?.ToString(@"hh\:mm") ?? "—")
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="small text-muted">Progress</div>
+
+                    <div class="progress mt-1" style="height: 8px;">
+                        <div class="progress-bar
+                            @(Model.ProgressPercentage > 80 ? "bg-success" :
+                                                           Model.ProgressPercentage > 40 ? "bg-warning" :
+                                                           "bg-danger")"
+                             style="width: @Model.ProgressPercentage%">
+                        </div>
+                    </div>
+
+                    <div class="small text-muted mt-1">
+                        @Model.ProgressPercentage.ToString("0")%
+                    </div>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <!-- 🎯 Actions -->
+            <div class="d-flex gap-2">
+
+                <a class="btn btn-warning"
+                   asp-action="Edit"
+                   asp-route-id="@Model.Id">
+                    ✏️ Edit
+                </a>
+
+                <a class="btn btn-danger"
+                   asp-action="Delete"
+                   asp-route-id="@Model.Id">
+                    🗑 Delete
+                </a>
+
+                <a class="btn btn-outline-secondary"
+                   asp-action="Index">
+                    ← Back
+                </a>
+
+            </div>
+
         </div>
-    }
-    @if (Model.TimeTaken.HasValue)
-    {
-        <div class="small text-muted">
-            Time taken: @Model.TimeTaken.Value.ToString(@"hh\:mm\:ss")
-        </div>
-    }
-</dl>
+    </div>
 
-
-<div>
-    <a class="expand-btn warning" a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a class="expand-btn danger" a asp-action="Delete" asp-route-id="@Model?.Id">Delete</a> |
-    <a class="expand-btn primary" a asp-action="Index">Back to List</a> 
 </div>
-
-
-    

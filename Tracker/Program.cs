@@ -36,7 +36,7 @@ else
 
 
 
-
+//בישביל שזה יעבוד צריך ליהיות איימיל: admin@email.com
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

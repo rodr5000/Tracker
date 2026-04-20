@@ -180,7 +180,7 @@ namespace Tracker.Controllers
                 _context.MainTasks.Where(m => m.UserId == userId),
                 "Id", "Name", taskItem.MainTaskId);
 
-            Console.WriteLine("EstimatedTime raw: " + Request.Form["EstimatedTime"]);
+            
 
             return View(taskItem);
         }
@@ -188,7 +188,7 @@ namespace Tracker.Controllers
         // POST: TaskItems/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartDate,DueDate")] Models.TaskItem taskItem)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartDate,DueDate,EstimatedTime")] Models.TaskItem taskItem)
         {
             taskItem.UserId = _userManager.GetUserId(User);
 
@@ -222,10 +222,11 @@ namespace Tracker.Controllers
                 System.Diagnostics.Debug.WriteLine(error.ErrorMessage);
             }
 
-            if (Request.Form["EstimatedTime"].Count > 0)
+            var estimatedHours = Request.Form["EstimatedTimeHours"];
+
+            if (!string.IsNullOrEmpty(estimatedHours))
             {
-                double hours = double.Parse(Request.Form["EstimatedTime"]);
-                taskItem.EstimatedTime = TimeSpan.FromHours(hours);
+                taskItem.EstimatedTime = TimeSpan.FromHours(double.Parse(estimatedHours));
             }
 
 

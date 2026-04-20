@@ -18,29 +18,51 @@
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="list-unstyled components"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="Index">Tasks</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="Calendar">Calendar</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="MainTasks" asp-action="Index">Main Tasks</a>
-                        </li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li calss="nav-item">
+                                <a asp-controller="Admin" asp-action="Users" class="nav-link">
+                                    Admin Panel
+                                </a>
+                            </li>
+                            <li calss="nav-item">
+                                <a asp-controller="Admin" asp-action="Dashboard" class="nav-link">
+                                    📊 Dashboard
+                                </a>
+                            </li>   
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
+                }
+                else
+                {
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="Index">Tasks</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="Calendar">Calendar</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="MainTasks" asp-action="Index">Main Tasks</a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="FocusToday">Focus Today</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="TaskItems" asp-action="FocusToday">Focus Today</a>
+                            </li>
 
 
-                    </ul>
-                    <partial name="_LoginPartial" />
-                </div>
+                        </ul>
+                        <partial name="_LoginPartial" />
+                    </div>
+                }
+               
             </div>
         </nav>
     </header>

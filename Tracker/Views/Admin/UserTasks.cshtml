@@ -1,0 +1,26 @@
+﻿@model IEnumerable<Tracker.Models.TaskItem>
+
+<div class="container mt-4">
+    <h2>📋 User Tasks</h2>
+
+    <ul class="list-group mt-3">
+        @foreach (var task in Model)
+        {
+            <li class="list-group-item">
+                <strong>@task.Title</strong>
+                <span class="badge bg-secondary">@task.Status</span>
+
+                <a asp-action="DeleteTask"
+                   asp-route-id="@task.Id"
+                   class="btn btn-sm btn-danger float-end">
+                    Delete
+                </a>
+                <a asp-action="TaskDetails"
+                   asp-route-id="@task.Id"
+                   class="btn btn-sm btn-info me-2">
+                    Details
+                </a>
+            </li>
+        }
+    </ul>
+</div>

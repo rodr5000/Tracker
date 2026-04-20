@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Tracker.Data;
 using Tracker.Models;
+using Tracker.Models.Enums;
+using Tracker.Models.ViewModels;
 
 namespace Tracker.Controllers
 {
@@ -31,6 +33,7 @@ namespace Tracker.Controllers
         public async Task<IActionResult> UserTasks(string userId)
         {
             var tasks = await _context.TaskItems
+                .IgnoreQueryFilters()
                 .Where(t => t.UserId == userId)
                 .ToListAsync();
 
@@ -39,7 +42,8 @@ namespace Tracker.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var task = await _context.TaskItems.FindAsync(id);
+            var task = await _context.TaskItems.IgnoreQueryFilters() 
+                .FirstOrDefaultAsync(t => t.Id == id);
 
             if (task == null) return NotFound();
 
@@ -66,6 +70,55 @@ namespace Tracker.Controllers
             }
 
             return RedirectToAction("Users");
+        }
+        public async Task<IActionResult> TaskDetails(int id)
+        {
+            var task = await _context.TaskItems
+                .IgnoreQueryFilters() 
+                .Include(t => t.MainTask)
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (task == null) return NotFound();
+
+            return View(task);
+        }
+        public async Task<IActionResult> Dashboard()
+        {
+            var users = await _userManager.Users.ToListAsync();
+
+            var tasks = await _context.TaskItems
+                .IgnoreQueryFilters()
+                .ToListAsync();
+
+            var now = DateTime.Now;
+
+            var model = new AdminDashboardViewModel
+            {
+                TotalUsers = users.Count,
+                TotalTasks = tasks.Count,
+
+                CompletedTasks = tasks.Count(t => t.Status == Status.Completed),
+                InProgressTasks = tasks.Count(t => t.Status == Status.InProgress),
+                PendingTasks = tasks.Count(t => t.Status == Status.Pending),
+
+                OverdueTasks = tasks.Count(t =>
+                    t.DueDate.HasValue &&
+                    t.DueDate < now &&
+                    t.Status != Status.Completed),
+
+                TotalHoursWorked = tasks
+                    .Where(t => t.TimeTaken.HasValue)
+                    .Sum(t => t.TimeTaken.Value.TotalHours),
+
+                TasksPerUser = tasks
+                .GroupBy(t => t.UserId) 
+                .ToDictionary(g => users
+                .FirstOrDefault(u => u.Id == g.Key)?
+                .Email ?? "Unknown",g => g.Count())
+            };
+
+            return View(model);
         }
     }
 }

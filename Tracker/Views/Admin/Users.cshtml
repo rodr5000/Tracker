@@ -1,0 +1,36 @@
+﻿@model IEnumerable<ApplicationUser>
+
+<div class="container mt-4">
+    <h2>👑 Admin Panel - Users</h2>
+
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary"
+                           asp-action="UserTasks"
+                           asp-route-userId="@user.Id">
+                            View Tasks
+                        </a>
+
+                        <a class="btn btn-sm btn-danger"
+                           asp-action="DeleteUser"
+                           asp-route-id="@user.Id">
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
