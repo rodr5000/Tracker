@@ -129,7 +129,7 @@ body {
 }
 
     .task-card-hover:hover {
-        transform: translateY(-4px);
+        transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.12);
     }
 
