@@ -71,7 +71,7 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask, // Removed User/UserId from Bind
+    [Bind("Id,Name,Description,CreatedAt,DueDate,Duration")] MainTask mainTask, // Removed User/UserId from Bind
     int Hours,
     int Minutes)
         {
@@ -79,6 +79,7 @@ namespace Tracker.Controllers
 
             // Assign values manually
             mainTask.UserId = userId;
+            Console.WriteLine($" \n ================Hours: {Hours}, Minutes: {Minutes}=======================");
             mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
 
             // REMOVE these from validation since they aren't coming from the form
@@ -118,7 +119,7 @@ namespace Tracker.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate")] MainTask mainTask, int Hours, int Minutes)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Description,CreatedAt,DueDate,Duration")] MainTask mainTask, int Hours, int Minutes)
         {
             if (id != mainTask.Id)
             {
@@ -130,6 +131,7 @@ namespace Tracker.Controllers
             mainTask.UserId = userId;
 
             // 2. Set the Duration from the extra inputs
+            Console.WriteLine($"Hours: {Hours}, Minutes: {Minutes}");
             mainTask.Duration = new TimeSpan(Hours, Minutes, 0);
 
             // 3. Clear validation for properties we handle manually

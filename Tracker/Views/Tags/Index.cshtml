@@ -1,0 +1,63 @@
+﻿@model IEnumerable<Tracker.Models.Tag>
+
+@{
+    ViewData["Title"] = "Tags Management";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Tags Management</h2>
+        <a class="btn btn-primary" asp-action="Create">
+            <i class="bi bi-plus-circle me-1"></i> Create New Tag
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4" style="width: 15%;">ID</th>
+                            <th scope="col">Tag Name</th>
+                            <th scope="col" class="text-end pe-4" style="width: 20%;">Visual Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tag in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted">#@tag.Id</td>
+                                <td>
+                                    <strong>@tag.Name</strong>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <span class="badge bg-primary px-3 py-2">
+                                        @tag.Name
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-tags text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3 fs-5">No tags found in the database.</p>
+                    <a class="btn btn-sm btn-outline-primary mt-2" asp-action="Create">
+                        Create your first tag now
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <a asp-controller="TaskItems" asp-action="Index" class="text-decoration-none text-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Tasks
+        </a>
+    </div>
+</div>

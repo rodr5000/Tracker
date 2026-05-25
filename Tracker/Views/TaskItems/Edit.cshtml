@@ -95,19 +95,44 @@
                                disabled />
                         <small class="text-muted">Tracked automatically</small>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Tags</label>
+                        <div class="d-flex flex-wrap gap-2 mt-1">
+                            @if (ViewBag.Tags != null)
+                            {
+                                @foreach (var tag in ViewBag.Tags)
+                                {
+                                    // בדיקה האם התגית הזו כבר משויכת למשימה הנוכחית
+                                    bool isChecked = Model.TaskItemTags != null && Model.TaskItemTags.Any(tt => tt.TagId == tag.Id);
 
-                </div>
+                                    <div class="form-check border rounded px-3 py-2 bg-light">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               name="selectedTags"
+                                               value="@tag.Id"
+                                               id="tag-@tag.Id"
+                                        @(isChecked ? "checked" : "") /> @* 💡 מסמן אוטומטית אם כבר נבחר בעבר *@
+                                        <label class="form-check-label ms-1" for="tag-@tag.Id">
+                                            @tag.Name
+                                        </label>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted small">No tags available. Create them first.</span>
+                            }
+                        </div>
+                    </div>
 
-                <!-- 🎯 Actions -->
-                <div class="d-flex gap-2 mt-3">
-
-                    <button type="submit" class="btn btn-success">
-                        💾 Save Changes
-                    </button>
-
-                    <a asp-action="Index" class="btn btn-outline-secondary">
-                        Cancel
-                    </a>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-success">
+                            💾 Save Changes
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
 
                 </div>
 

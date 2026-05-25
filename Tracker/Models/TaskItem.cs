@@ -78,6 +78,9 @@ namespace Tracker.Models
             }
         }
 
+        public ICollection<TaskItemTag> TaskItemTags { get; set; }
+    = new List<TaskItemTag>();
+
         // Navigation
         //public ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
     }

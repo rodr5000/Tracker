@@ -39,24 +39,30 @@ namespace Tracker.Controllers
             var userId = _userManager.GetUserId(User);
 
             var tasks = await _context.TaskItems
-                .Where(t => t.UserId == userId)
                 .Include(t => t.MainTask)
+                .Include(t => t.TaskItemTags)
+                .ThenInclude(tt => tt.Tag)
+                .Where(t => t.UserId == userId)
                 .ToListAsync();
 
-            return View(await _context.TaskItems.ToListAsync());
-            
+            // ✅ מחזירים את הרשימה המקושרת והמסוננת
+            return View(tasks);
         }
 
         // GET: TaskItems/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-
-            var taskItem = await _context.TaskItems.Include(t => t.MainTask).FirstOrDefaultAsync(m => m.Id == id);
+            ViewBag.Tags = _context.Tags.ToList();
+            var taskItem = await _context.TaskItems
+       .Include(t => t.MainTask)
+       .Include(t => t.TaskItemTags)
+           .ThenInclude(tt => tt.Tag)
+       .FirstOrDefaultAsync(m => m.Id == id);
             if (taskItem == null)
             {
                 return NotFound();
             }
-            
+
             return View(taskItem);
         }
 
@@ -64,6 +70,8 @@ namespace Tracker.Controllers
         public IActionResult Create()
         {
             ViewBag.MainTaskId = new SelectList(_context.MainTasks, "Id", "Name");
+
+            ViewBag.Tags = _context.Tags.ToList();
 
             return View();
         }
@@ -74,42 +82,39 @@ namespace Tracker.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-    [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,EstimatedTime,UserId")]
-    Models.TaskItem taskItem)
+     [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,EstimatedTime")]
+    Models.TaskItem taskItem,
+     int[] selectedTags)
         {
             var userId = _userManager.GetUserId(User);
+
+            // ✅ חובה לפני השמירה
             taskItem.UserId = userId;
 
-            //time check
-            if (taskItem.StartDate.HasValue && taskItem.DueDate.HasValue)
-            {
-                if (taskItem.StartDate >= taskItem.DueDate)
-                {
-                    ModelState.AddModelError("",
-                        "End time must be after start time.");
-                }
-
-                var maxDuration = TimeSpan.FromDays(30); 
-                if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
-                {
-                    ModelState.AddModelError("",
-                        "Task duration cannot be longer than 30 days.");
-                }
-
-            }
-            var errors = ModelState.Values.SelectMany(v => v.Errors);
-            foreach (var error in errors)
-            {
-                System.Diagnostics.Debug.WriteLine(error.ErrorMessage);
-            }
-
+            // זמן משוער
             if (Request.Form["EstimatedTime"].Count > 0)
             {
                 double hours = double.Parse(Request.Form["EstimatedTime"]);
                 taskItem.EstimatedTime = TimeSpan.FromHours(hours);
             }
 
-            // Ensure MainTask
+            // בדיקות זמן
+            if (taskItem.StartDate.HasValue && taskItem.DueDate.HasValue)
+            {
+                if (taskItem.StartDate >= taskItem.DueDate)
+                {
+                    ModelState.AddModelError("", "End time must be after start time.");
+                }
+
+                var maxDuration = TimeSpan.FromDays(30);
+
+                if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
+                {
+                    ModelState.AddModelError("", "Task duration cannot be longer than 30 days.");
+                }
+            }
+
+            // MainTask ברירת מחדל
             if (!taskItem.MainTaskId.HasValue || taskItem.MainTaskId == 0)
             {
                 var generalTask = await _context.MainTasks
@@ -130,30 +135,32 @@ namespace Tracker.Controllers
 
                 taskItem.MainTaskId = generalTask.Id;
             }
-            // Reduce MainTask.Duration if task is completed
-            if (taskItem.Status == Status.Completed && taskItem.MainTaskId != null && taskItem.TimeTaken.HasValue)
+
+            if (!ModelState.IsValid)
             {
-                var mainTask = await _context.MainTasks.FindAsync(taskItem.MainTaskId);
-                if (mainTask != null)
-                {
-                    mainTask.Duration ??= TimeSpan.Zero;
-                    mainTask.Duration -= taskItem.TimeTaken.Value;
-                    if (mainTask.Duration < TimeSpan.Zero)
-                        mainTask.Duration = TimeSpan.Zero;
-                }
+                ViewBag.MainTaskId =
+                    new SelectList(_context.MainTasks, "Id", "Name");
+
+                ViewBag.Tags = _context.Tags.ToList();
+
+                return View(taskItem);
             }
 
-            try
+            // ✅ שמירת Task
+            _context.TaskItems.Add(taskItem);
+            await _context.SaveChangesAsync();
+
+            // ✅ שמירת Tags
+            foreach (var tagId in selectedTags)
             {
-                _context.TaskItems.Add(taskItem);
-                await _context.SaveChangesAsync();
+                _context.TaskItemTags.Add(new TaskItemTag
+                {
+                    TaskItemId = taskItem.Id,
+                    TagId = tagId
+                });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("🔥 SAVE FAILED:");
-                Console.WriteLine(ex.InnerException?.Message ?? ex.Message);
-                throw;
-            }   
+
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
@@ -170,8 +177,9 @@ namespace Tracker.Controllers
             var userId = _userManager.GetUserId(User);
             // Security: Only find the task item if it belongs to a MainTask owned by this user
             var taskItem = await _context.TaskItems
-                .Include(t => t.MainTask)
-                .FirstOrDefaultAsync(t => t.Id == id && t.MainTask.UserId == userId);
+                    .Include(t => t.MainTask)
+                    .Include(t => t.TaskItemTags)
+                    .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
             if (taskItem == null) return NotFound();
 
@@ -180,7 +188,8 @@ namespace Tracker.Controllers
                 _context.MainTasks.Where(m => m.UserId == userId),
                 "Id", "Name", taskItem.MainTaskId);
 
-            
+            ViewBag.Tags = await _context.Tags.ToListAsync();
+
 
             return View(taskItem);
         }
@@ -188,7 +197,10 @@ namespace Tracker.Controllers
         // POST: TaskItems/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartDate,DueDate,EstimatedTime")] Models.TaskItem taskItem)
+        public async Task<IActionResult> Edit(
+     int id,
+     [Bind("Id,MainTaskId,UserId,Title,Description,Status,Priority,StartDate,DueDate,EstimatedTime")] Models.TaskItem taskItem,
+     int[] selectedTags) // 💡 1. הוספנו את מערך ה-IDs של התגיות שנבחרו
         {
             taskItem.UserId = _userManager.GetUserId(User);
 
@@ -196,26 +208,24 @@ namespace Tracker.Controllers
 
             // 1. Manually remove validation for properties NOT in the form
             ModelState.Remove("MainTask");
-            // If your TaskItem model has a "User" or other linked models, remove them here too:
-            // ModelState.Remove("User");
+            ModelState.Remove("TaskItemTags"); // 💡 2. מונע מה-ModelState להיכשל בגלל קשרי הניווט של התגיות
 
-            //time check
+            // time check
             if (taskItem.StartDate.HasValue && taskItem.DueDate.HasValue)
             {
                 if (taskItem.StartDate >= taskItem.DueDate)
                 {
-                    ModelState.AddModelError("",
-                        "End time must be after start time.");
+                    ModelState.AddModelError("", "End time must be after start time.");
                 }
 
                 var maxDuration = TimeSpan.FromDays(30);
                 if (taskItem.DueDate.Value - taskItem.StartDate.Value > maxDuration)
                 {
-                    ModelState.AddModelError("",
-                        "Task duration cannot be longer than 30 days.");
+                    ModelState.AddModelError("", "Task duration cannot be longer than 30 days.");
                 }
-
             }
+
+            // הדפסת שגיאות ל-Debug (הקוד המקורי שלך)
             var errors = ModelState.Values.SelectMany(v => v.Errors);
             foreach (var error in errors)
             {
@@ -223,27 +233,39 @@ namespace Tracker.Controllers
             }
 
             var estimatedHours = Request.Form["EstimatedTimeHours"];
-
             if (!string.IsNullOrEmpty(estimatedHours))
             {
                 taskItem.EstimatedTime = TimeSpan.FromHours(double.Parse(estimatedHours));
             }
 
-
-
-
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Update the record
+                    // עדכון פרטי המשימה הבסיסיים
                     _context.Update(taskItem);
-
-                    // Handle the Duration logic for the parent MainTask here if needed...
-
                     await _context.SaveChangesAsync();
 
-                    // Redirect to MainTasks Index so you can see the change immediately
+                    // 💡 3. עדכון התגיות: קודם כל מוחקים את הקישורים הישנים של המשימה הזו
+                    var oldTags = _context.TaskItemTags.Where(tt => tt.TaskItemId == taskItem.Id);
+                    _context.TaskItemTags.RemoveRange(oldTags);
+                    await _context.SaveChangesAsync();
+
+                    // 💡 4. שומרים את התגיות החדשות שסומנו בטופס
+                    if (selectedTags != null && selectedTags.Length > 0)
+                    {
+                        foreach (var tagId in selectedTags)
+                        {
+                            _context.TaskItemTags.Add(new TaskItemTag
+                            {
+                                TaskItemId = taskItem.Id,
+                                TagId = tagId
+                            });
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // הפנייה חזרה (הקוד המקורי שלך מפנה ל-MainTasks, תשאיר לפי הנוחות שלך)
                     return RedirectToAction("Index", "MainTasks");
                 }
                 catch (DbUpdateConcurrencyException)
@@ -253,10 +275,13 @@ namespace Tracker.Controllers
                 }
             }
 
-            // If we reach here, validation failed. 
-            // Check 'ModelState' in debugger to see why!
+            // אם הגענו לכאן - ה-Validation נכשל. מחזירים את ה-View וממלאים מחדש את הנתונים
             var userId = _userManager.GetUserId(User);
             ViewBag.MainTaskId = new SelectList(_context.MainTasks.Where(m => m.UserId == userId), "Id", "Name", taskItem.MainTaskId);
+
+            // 💡 5. חובה לטעון מחדש את כל התגיות כדי שהצ'קבוקסים לא ייעלמו מהמסך אם חזרנו עם שגיאה
+            ViewBag.Tags = _context.Tags.ToList();
+
             return View(taskItem);
         }
 
@@ -513,6 +538,31 @@ namespace Tracker.Controllers
                 score += 30;
             }
 
+            if (task.TaskItemTags != null && task.TaskItemTags.Any())
+            {
+                foreach (var itemTag in task.TaskItemTags)
+                {
+                    // מוודאים שהתגית עצמה נטענה ולא Null
+                    if (itemTag.Tag != null && !string.IsNullOrEmpty(itemTag.Tag.Name))
+                    {
+                        // המרת השם לטקסט קטן כדי למנוע בעיות של capital letters (למשל urgent לעומת Urgent)
+                        var tagName = itemTag.Tag.Name.ToLower().Trim();
+
+                        score += tagName switch
+                        {
+                            "urgent" => 50,         // תגית חירום מקפיצה משמעותית
+                            "work" => 25,           // משימות עבודה מקבלות עדיפות בשוטף
+                            "study" => 20,          // משימות לימודים
+                            "entertainment" => -15, // משימות פנאי מורידות ניקוד (כדי שלא יקפצו בטעות לראש הפוקוס)
+                            _ => 0                  // תגיות אחרות לא משפיעות על הניקוד
+                        };
+
+
+
+                        
+                    }
+                }
+            }
             return score;
         }
 

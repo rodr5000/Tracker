@@ -95,7 +95,17 @@
                                 }
                             </select>
                         </form>
-                    </div>
+                    </div> 
+                </div>
+                <div class="mt-2">
+
+                    @foreach (var tag in task.TaskItemTags)
+                    {
+                        <span class="badge bg-primary me-1">
+                            @tag.Tag.Name
+                        </span>
+                    }
+
                 </div>
                 @if (task.DueDate.HasValue)
                 {

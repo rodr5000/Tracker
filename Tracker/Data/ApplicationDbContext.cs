@@ -13,6 +13,9 @@ namespace Tracker.Data
         public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<TimeLog> TimeLogs { get; set; }
 
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<TaskItemTag> TaskItemTags { get; set; }
+
         private string? CurrentUserId =>
         _httpContextAccessor.HttpContext?.User?
             .FindFirstValue(ClaimTypes.NameIdentifier);
@@ -54,6 +57,20 @@ namespace Tracker.Data
                 .HasForeignKey(t => t.MainTaskId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+
+
+            builder.Entity<TaskItemTag>()
+            .HasKey(tt => new { tt.TaskItemId, tt.TagId });
+
+            builder.Entity<TaskItemTag>()
+                .HasOne(tt => tt.TaskItem)
+                .WithMany(t => t.TaskItemTags)
+                .HasForeignKey(tt => tt.TaskItemId);
+
+            builder.Entity<TaskItemTag>()
+                .HasOne(tt => tt.Tag)
+                .WithMany(t => t.TaskItemTags)
+                .HasForeignKey(tt => tt.TagId);
         }
 
 

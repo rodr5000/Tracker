@@ -9,16 +9,14 @@
     <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body">
 
-            <!-- 🔥 Header -->
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h3 class="fw-bold">@Model.Title</h3>
+                    <h3 class="fw-bold mb-1">@Model.Title</h3>
                     <div class="text-muted small">
-                        Main Task: <strong>@Model.MainTask?.Name ?? "General"</strong>
+                        Main Task: <strong>@(Model.MainTask?.Name ?? "General")</strong>
                     </div>
                 </div>
 
-                <!-- Status badge -->
                 <span class="badge
                     @(Model.Status == Tracker.Models.Enums.Status.Completed ? "bg-success" :
                                             Model.Status == Tracker.Models.Enums.Status.InProgress ? "bg-primary" :
@@ -28,16 +26,33 @@
                 </span>
             </div>
 
+            <div class="mt-2">
+                @if (Model.TaskItemTags != null && Model.TaskItemTags.Any())
+                {
+                    @foreach (var itemTag in Model.TaskItemTags)
+                    {
+                        @if (itemTag.Tag != null)
+                        {
+                            <span class="badge bg-primary px-2.5 py-1.5 me-1 shadow-sm fs-7">
+                                <i class="bi bi-tag-fill me-1"></i> @itemTag.Tag.Name
+                            </span>
+                        }
+                    }
+                }
+                else
+                {
+                    <span class="text-muted small italic"><i class="bi bi-tag"></i> No tags</span>
+                }
+            </div>
+
             <hr />
 
-            <!-- 📝 Description -->
             <p class="text-muted">
                 @(string.IsNullOrWhiteSpace(Model.Description)
                                 ? "No description provided."
                                 : Model.Description)
             </p>
 
-            <!-- 📊 Info Grid -->
             <div class="row mt-3">
 
                 <div class="col-md-4">
@@ -52,19 +67,18 @@
 
                 <div class="col-md-4">
                     <div class="small text-muted">Start Date</div>
-                    <div>@Model.StartDate?.ToString("dd MMM yyyy") ?? "—"</div>
+                    <div>@(Model.StartDate?.ToString("dd MMM yyyy") ?? "—")</div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="small text-muted">Due Date</div>
-                    <div>@Model.DueDate?.ToString("dd MMM yyyy") ?? "—"</div>
+                    <div>@(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")</div>
                 </div>
 
             </div>
 
             <hr />
 
-            <!-- ⏱ Time Section -->
             <div class="row">
 
                 <div class="col-md-4">
@@ -102,23 +116,22 @@
 
             <hr />
 
-            <!-- 🎯 Actions -->
             <div class="d-flex gap-2">
 
                 <a class="btn btn-warning"
-                   asp-action="Edit"
-                   asp-route-id="@Model.Id">
+                       asp-action="Edit"
+                       asp-route-id="@Model.Id">
                     ✏️ Edit
                 </a>
 
                 <a class="btn btn-danger"
-                   asp-action="Delete"
-                   asp-route-id="@Model.Id">
+                       asp-action="Delete"
+                       asp-route-id="@Model.Id">
                     🗑 Delete
                 </a>
 
                 <a class="btn btn-outline-secondary"
-                   asp-action="Index">
+                       asp-action="Index">
                     ← Back
                 </a>
 
@@ -126,5 +139,4 @@
 
         </div>
     </div>
-
 </div>
