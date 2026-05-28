@@ -12,6 +12,8 @@ using Tracker.Data;
 using Tracker.Models;
 using Tracker.Models.Enums;
 using Tracker.Models.ViewModels;
+using Tracker.Services;
+
 using static System.Net.Mime.MediaTypeNames;
 
 
@@ -24,6 +26,7 @@ namespace Tracker.Controllers
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private GenericServiceClient _serviceClient;
 
         public TaskItemsController(
             ApplicationDbContext context,
@@ -31,6 +34,9 @@ namespace Tracker.Controllers
         {
             _context = context;
             _userManager = userManager;
+
+            // Create the service client
+            _serviceClient = new GenericServiceClient();
         }
 
         // GET: TaskItems
@@ -637,10 +643,82 @@ namespace Tracker.Controllers
         }
 
 
+        // POST: TaskItems/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Import(
+     [Bind("Id,Title,MainTaskId,Description,Status,Priority,StartDate,DueDate,EstimatedTime")]
+    Models.TaskItem taskItem,
+     int[] selectedTags)
+        {
+            var userId = _userManager.GetUserId(User);
 
+            // ✅ חובה לפני השמירה
+            taskItem.UserId = userId;
+
+            // ***************** API *****************
+
+
+
+
+
+
+
+            // ***************** API *****************
+
+
+            // זמן משוער
+
+            // MainTask ברירת מחדל
+            if (!taskItem.MainTaskId.HasValue || taskItem.MainTaskId == 0)
+            {
+                var generalTask = await _context.MainTasks
+                    .FirstOrDefaultAsync(m => m.Name == "General" && m.UserId == userId);
+
+                if (generalTask == null)
+                {
+                    generalTask = new MainTask
+                    {
+                        Name = "General",
+                        UserId = userId,
+                        DurationTicks = 0
+                    };
+
+                    _context.MainTasks.Add(generalTask);
+                    await _context.SaveChangesAsync();
+                }
+
+                taskItem.MainTaskId = generalTask.Id;
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.MainTaskId =
+                    new SelectList(_context.MainTasks, "Id", "Name");
+
+                ViewBag.Tags = _context.Tags.ToList();
+
+                return View(taskItem);
+            }
+
+            // ✅ שמירת Task
+            _context.TaskItems.Add(taskItem);
+            await _context.SaveChangesAsync();
+
+       
+            
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
 
 
 
     }
+
+
 }
 
