@@ -14,7 +14,7 @@ namespace Tracker.Services
 
         /// <summary>
         /// Checks inventory for an item by name or item number
-        /// </summary>
+        /// </summary>  
         /// <param name="itemNameOrNumber">The item name or item number to search for</param>
         /// <returns>Response with item details and quantity, or null if not found</returns>
         public async Task<InventoryResponse> CheckInventoryAsync(string itemNameOrNumber)

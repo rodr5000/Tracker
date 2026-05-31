@@ -643,6 +643,7 @@ namespace Tracker.Controllers
         }
 
 
+
         // POST: TaskItems/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -660,7 +661,32 @@ namespace Tracker.Controllers
 
             // ***************** API *****************
 
+            var inventory =await _serviceClient.CheckInventoryAsync(taskItem.Title);
 
+            if (inventory == null)
+            {
+                ModelState.AddModelError("", "Item not found in inventory.");
+
+                ViewBag.MainTaskId =
+                    new SelectList(_context.MainTasks, "Id", "Name");
+
+                ViewBag.Tags = _context.Tags.ToList();
+
+                return View(taskItem);
+            }
+
+            taskItem.Title = inventory.ItemNumber;
+
+            taskItem.Description =
+                $"Item: {inventory.Item}\n" +
+                $"Item Number: {inventory.ItemNumber}";
+
+            taskItem.EstimatedTime =
+                TimeSpan.FromHours(inventory.Quantity);
+
+            taskItem.Status = Status.Pending;
+
+            taskItem.Priority = Priority.Low;
 
 
 
