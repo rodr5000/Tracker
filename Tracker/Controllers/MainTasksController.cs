@@ -14,6 +14,7 @@ using Tracker.Models;
 
 namespace Tracker.Controllers
 {
+    [Authorize(Roles = "User")]
     [Authorize]
     public class MainTasksController : Controller
     {

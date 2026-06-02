@@ -20,6 +20,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace Tracker.Controllers
 {
+    [Authorize(Roles = "User")]
     [Authorize]
     public class TaskItemsController : Controller
     {
