@@ -14,7 +14,7 @@ using Tracker.Models;
 
 namespace Tracker.Controllers
 {
-    [Authorize(Roles = "User")]
+    
     [Authorize]
     public class MainTasksController : Controller
     {
@@ -51,7 +51,9 @@ namespace Tracker.Controllers
             }
 
             var mainTask = await _context.MainTasks
+                .Include(m => m.TaskItems)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (mainTask == null)
             {
                 return NotFound();
